@@ -1,0 +1,6 @@
+asgiref==3.5.1
+Django==3.2.2
+django-shortcuts==1.6
+mysql-connector==2.2.9
+pytz==2022.1
+sqlparse==0.4.2
