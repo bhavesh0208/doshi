@@ -10,7 +10,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>SB Admin 2 - Tables</title>
+    <title>SB Admin 2 - Generate Barcode</title>
 
     <!-- Custom fonts for this template -->
     <link href="{% static 'assets/vendor/fontawesome-free/css/all.min.css' %}" rel="stylesheet" type="text/css">
@@ -77,14 +77,15 @@
                     <span>Invoices</span></a>
             </li>
 
+
             <!-- Nav Item - Tables -->
-            <li class="nav-item">
+             <li class="nav-item">
                 <a class="nav-link" href="{% url 'barcodes' %}">
                     <i class="fas fa-fw fa-table"></i>
                     <span>Barcodes</span></a>
             </li>
 
-            
+
             <!-- Nav Item - Tables -->
             <li class="nav-item">
                 <a class="nav-link" href="{% url 'exceptions' %}">
@@ -321,65 +322,48 @@
                 <div class="container-fluid">
 
                     <!-- Page Heading -->
-                    <h1 class="h3 mb-2 text-gray-800">Tables</h1>
-                    <p class="mb-4">DataTables is a third party plugin that is used to generate the demo table below.
-                        For more information about DataTables, please visit the <a target="_blank"
-                            href="https://datatables.net">official DataTables documentation</a>.</p>
+                    <h1 class="h3 mb-2 text-gray-800">Stocks</h1>
+                    
 
                     <!-- DataTales Example -->
                     <div class="card shadow mb-4">
-                        <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-primary">DataTables Example</h6>
-                        </div>
+                        
+                        
                         <div class="card-body">
                             <div class="table-responsive">
-                                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                                <table class="table table-bordered" id="stockDataTable" width="100%" cellspacing="0">
                                     <thead>
                                         <tr>
-                                            <th>Name</th>
-                                            <th>Position</th>
-                                            <th>Office</th>
-                                            <th>Age</th>
-                                            <th>Start date</th>
-                                            <th>Salary</th>
+                                            <th>Sr.No.</th>
+                                            <th>SKU Name</th>
+                                            <th>Total Quantity</th>
+                                            <th>Stock Rate</th>
+                                            <th>Total Amount</th>
+                                            <th>Generate Barcode</th>
                                         </tr>
                                     </thead>
-                                    <tfoot>
-                                        <tr>
-                                            <th>Name</th>
-                                            <th>Position</th>
-                                            <th>Office</th>
-                                            <th>Age</th>
-                                            <th>Start date</th>
-                                            <th>Salary</th>
-                                        </tr>
-                                    </tfoot>
+                                   
                                     <tbody>
-                                        <tr>
-                                            <td>Tiger Nixon</td>
-                                            <td>System Architect</td>
-                                            <td>Edinburgh</td>
-                                            <td>61</td>
-                                            <td>2011/04/25</td>
-                                            <td>$320,800</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Garrett Winters</td>
-                                            <td>Accountant</td>
-                                            <td>Tokyo</td>
-                                            <td>63</td>
-                                            <td>2011/07/25</td>
-                                            <td>$170,750</td>
-                                        </tr>
+                                        {% for stk in stockList %}
+                                            <tr>
+                                                <td>{{ forloop.counter }}</td>
+                                                <td>{{ stk.stock_name }}</td>
+                                                <td>{{ stk.stock_qty }}</td>
+                                                <td>{{ stk.stock_rate }}</td>
+                                                <td></td>
+                                                <td>
+                                                    <form method="post" action="{% url 'barcodes' %}">
+                                                        {% csrf_token %}
+                                                        <div class="form-group">
+                                                            <input type="hidden"class="form-control" value="{{ stk.id }}" name="stock_id" id="stock {{ stk.id }}" aria-describedby="helpId" placeholder="">
+                                                            <button type="submit" id={{stk.id}} class="btn btn-outline-primary"> Generate</button>
+                                                        </div>
+
+                                                    </form>
+                                                    </td>
+                                            </tr>
+                                        {% endfor %}
                                         
-                                        <tr>
-                                            <td>Donna Snider</td>
-                                            <td>Customer Support</td>
-                                            <td>New York</td>
-                                            <td>27</td>
-                                            <td>2011/01/25</td>
-                                            <td>$112,000</td>
-                                        </tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -434,7 +418,7 @@
     </div>
 
     <!-- Bootstrap core JavaScript-->
-    <script src="{% static 'assets/vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'assets/vendor/bootstrap/js/bootstrap.bundle.min.js ' %}"></script>
     <script src="{% static 'assets/vendor/jquery/jquery.min.js' %}"></script>
 
     <!-- Core plugin JavaScript-->
@@ -450,6 +434,14 @@
     <!-- Page level custom scripts -->
     <script src="{% static 'assets/js/demo/datatables-demo.js' %}"></script>
 
+    <script>
+            var stockData = document.getElementById('stockDataTable');
+            for (var i = 1; i < stockData.rows.length; i++){
+                stockQty = stockData.rows[i].cells.item(2).innerHTML;
+                stockRate = stockData.rows[i].cells.item(3).innerHTML;
+                stockData.rows[i].cells.item(4).innerHTML = (stockQty * stockRate).toFixed(1);
+            }
+    </script>
 </body>
 
 </html>

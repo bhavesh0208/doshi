@@ -1,6 +1,11 @@
 from threading import Thread
 from django.core.mail import send_mail
-# from .models import StockBarcode
+from barcode import EAN13
+from random import randint
+from .models import StockBarcode
+from io import BytesIO
+from barcode.writer import ImageWriter
+from django.conf import settings
 
 
 class EmailThread(Thread):
@@ -17,8 +22,9 @@ class EmailThread(Thread):
 
         
 def generate():
-    sno = EAN13(str(randint(100000000000, 999999999999))).ean
+    sno = EAN13(str(randint(100000000000, 999999999999)), writer=ImageWriter())
     if StockBarcode.objects.filter(serial_no=sno).count() > 0:
         generate()
     else:
-        return sno
+        sno.save('Barcode_{}'.format(sno.ean))
+        return sno.ean

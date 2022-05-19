@@ -3,6 +3,7 @@ from django.contrib import messages
 from django.http import HttpResponse
 from .models import *
 from django.core.mail import send_mail
+from django.core.files import File
 from random import randint
 from .validators import * 
 from django.contrib.auth.password_validation import validate_password
@@ -62,7 +63,7 @@ def login(request):
             email = request.POST['loginEmail']
             password = request.POST['loginPassword']
             user = User.objects.get(email=email)
-            print(user, email, password)
+            
             if user:
                 if password == user.password:
                     msg = "Logged In user " + user.name
@@ -113,8 +114,6 @@ def verify_otp(request):
     if request.method == 'POST':
         try:
             verify_otp = request.POST['verifyOTP']
-            print(request.session['otp'], verify_otp)
-            # print(verify_otp, request.session['otp'])
             if 'otp' in request.session:
                 if int(verify_otp) == int(request.session['otp']):
                     messages.success(request, 'OTP verification successful')
@@ -154,9 +153,9 @@ def reset_password(request):
 
 def stocks(request):
     if 'id' in request.session:
-        stockList = Stock.objects.all()
+        stockList = Stock.objects.filter(is_generated=True)
         return render(request,'doshi/stocks.html', {'stockList': stockList})
-    
+
     return redirect('login')
 
 
@@ -167,14 +166,43 @@ def invoices(request):
     return redirect('login')
 
 
+def barcodes(request):
+    if request.method == 'POST':
+        try:
+            get_stock = Stock.objects.get(pk=request.POST['stock_id'])
+            
+            if not StockBarcode.objects.filter(stock=get_stock).count() > 0 and get_stock.is_generated == False:
+                sno = generate()
+                StockBarcode.objects.create(serial_no=sno, stock=get_stock)
+                get_stock.is_generated = True
+                get_stock.save()
+                messages.success(request, 'Barcode Generated')
+                stockList = Stock.objects.filter(is_generated=False)
+                return render(request, 'doshi/barcodes.html',  {'stockList': stockList})
+            
+        except Exeception as e:
+            messages.error(request, e)
+            return redirect('barcodes')
+            
+
+    if 'id' in request.session:
+        stockList = Stock.objects.filter(is_generated=False)
+        return render(request, 'doshi/barcodes.html', {'stockList': stockList})
+    
+    return redirect('login')
+
+
+def download_barcode(request):
+    pass    
+
+
 def exceptions(request):
     if 'id' in request.session:
         return render(request, 'doshi/exceptions.html')
 
     return redirect('login')
         
-'''
+
 def createBarcode(request):
 
     StockBarcode.objects.create(serial_no=generate())
-'''

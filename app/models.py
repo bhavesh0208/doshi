@@ -4,7 +4,7 @@ from django.contrib.auth import password_validation
 from django.contrib.auth.password_validation import validate_password
 from .validators import * 
 from random import randint
-from barcode import EAN13
+
 
 
 # Create your models here.
@@ -24,6 +24,7 @@ class Stock(models.Model):
     stock_name = models.CharField(max_length=100, unique=True, default="")
     stock_qty = models.IntegerField(default=0)
     stock_rate = models.FloatField(default=0)
+    is_generated = models.BooleanField(default=False)
     
 
     def __str__(self):
@@ -33,7 +34,9 @@ class Stock(models.Model):
 class StockBarcode(models.Model):
     serial_no = models.CharField(default='', max_length=13, unique=True)
     stock = models.ForeignKey(Stock, on_delete=models.CASCADE, default=None, null=True)
+    barcode_image = models.ImageField(upload_to="barcode/", default="")
 
     def __str__(self):
         return self.serial_no
 
+    
