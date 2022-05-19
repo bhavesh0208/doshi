@@ -8,7 +8,7 @@ from .validators import *
 from django.contrib.auth.password_validation import validate_password
 from django.core.validators import validate_email
 from django.http import JsonResponse
-from .utils import EmailThread
+from .utils import *
 
 
 # Create your views here.
@@ -49,8 +49,7 @@ def register(request):
             else:
                 raise Exception('User with this email id already exists')
         except Exception as e:
-            msg = str(e)
-            messages.error(request, msg)
+            messages.error(request, e)
             return redirect('register')
 
     return render(request, 'doshi/register.html')
@@ -74,11 +73,10 @@ def login(request):
                     messages.error(request, "Invalid Password ")
                     return redirect('login')
         except User.DoesNotExist as e:
-            msg = "User does not exist "
+            msg = "Invalid User"
             messages.error(request, msg)
         except Exception as e:
-            msg = str(e)
-            messages.error(request, msg)
+            messages.error(request, e)
 
     return render(request, 'doshi/login.html')
         
@@ -101,7 +99,7 @@ def forgot_password(request):
                 otp = randint(1000, 9999)
                 request.session['otp'] = otp
                 request.session['email'] = email
-                EmailThread(email, otp)
+                EmailThread(email, otp).start()
             messages.success(request, "OTP sent successfully on this email id...")
             return render(request, 'doshi/verify-otp.html', {'otp': otp, 'email': email})
         except Exception as e:
@@ -120,6 +118,8 @@ def verify_otp(request):
             if 'otp' in request.session:
                 if int(verify_otp) == int(request.session['otp']):
                     messages.success(request, 'OTP verification successful')
+                    del request.session['otp']
+                    request.session['r-p'] = "12345"
                     return redirect('reset-password')
                 else:
                     raise Exception("Invalid OTP ")
@@ -127,29 +127,29 @@ def verify_otp(request):
             messages.error(request, e)
             return redirect('verify-otp')
 
-    return render(request, 'doshi/verify-otp.html')
+    if 'otp' in request.session:
+        return render(request, 'doshi/verify-otp.html')
+    else:
+        return redirect('login')
     
 
 def reset_password(request):
-    if request.method == 'GET':
-        if 'otp' in request.session:
-            return render(request, 'doshi/reset-password.html')
-    
-        return redirect('login')
-
     if request.method == 'POST':
-        
         try:
             password = request.POST['ResetPassword']
             get_user = User.objects.get(email=request.session['email'])
             get_user.password = password
             get_user.save()
+            del request.session['r-p']
             return redirect('login')
         except Exception as e:
-            messages.error(request, 'error occured' + e)
+            messages.error(request, e)
             return redirect('reset-password')
-    
-    
+
+    if 'r-p' in request.session:
+        return render(request, 'doshi/reset-password.html')
+    else:
+        return redirect('login')
 
 
 def stocks(request):
@@ -173,3 +173,8 @@ def exceptions(request):
 
     return redirect('login')
         
+'''
+def createBarcode(request):
+
+    StockBarcode.objects.create(serial_no=generate())
+'''

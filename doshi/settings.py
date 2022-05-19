@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-&8$w1t%eunnmnz18zeqe8gx4p74p7-p3))y_ai_e!e46)ux7k$
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
@@ -75,15 +75,14 @@ WSGI_APPLICATION = 'doshi.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'doshidb',
         'USER': 'root',
-        'PASSWORD': 'abc123',
-        'HOST': 'localhost',
-        'PORT': '3306',
+        'PASSWORD': 'Bhavesh@123',
+        'HOST': '127.0.0.1',
+        'PORT': '',
     }
 }
 
@@ -125,7 +124,11 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+
+if DEBUG:
+    STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+else:
+    STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 
 # Default primary key field type
@@ -138,7 +141,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # SMTP Configuration
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = '587'
+EMAIL_PORT = "587"
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'djangodeveloper09@gmail.com'
 EMAIL_HOST_PASSWORD = 'Django@12345'
