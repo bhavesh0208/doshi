@@ -65,9 +65,9 @@
 
             <!-- Nav Item - Charts -->
             <li class="nav-item">
-                <a class="nav-link" href="{% url 'stocks' %}">
+                <a class="nav-link" href="{% url 'sku-items' %}">
                     <i class="fas fa-fw fa-chart-area"></i>
-                    <span>Stocks</span></a>
+                    <span>SKU Items</span></a>
             </li>
 
             <!-- Nav Item - Tables -->
@@ -322,7 +322,7 @@
                 <div class="container-fluid">
 
                     <!-- Page Heading -->
-                    <h1 class="h3 mb-2 text-gray-800">Stocks</h1>
+                    <h1 class="h3 mb-2 text-gray-800">sku-items</h1>
                     
 
                     <!-- DataTales Example -->
@@ -344,23 +344,23 @@
                                     </thead>
                                    
                                     <tbody>
-                                        {% for stk in stockList %}
+                                        {% for stk in sku_list %}
                                             <tr>
                                                 <td>{{ forloop.counter }}</td>
-                                                <td>{{ stk.stock_name }}</td>
-                                                <td>{{ stk.stock_qty }}</td>
-                                                <td>{{ stk.stock_rate }}</td>
-                                                <td></td>
+                                                <td>{{ stk.sku_name }}</td>
+                                                <td>{{ stk.sku_qty }}</td>
+                                                <td>{{ stk.sku_rate }}</td>
+                                                <td><a id="" href="{{MEDIA}}{{ stk.sku_barcode_image.url }}" role="button" class="btn btn-outline-primary" download>Download</a></td>
                                                 <td>
                                                     <form method="post" action="{% url 'barcodes' %}">
                                                         {% csrf_token %}
                                                         <div class="form-group">
                                                             <input type="hidden"class="form-control" value="{{ stk.id }}" name="stock_id" id="stock {{ stk.id }}" aria-describedby="helpId" placeholder="">
-                                                            <button type="submit" id={{stk.id}} class="btn btn-outline-primary"> Generate</button>
+                                                            <button type="submit" id={{stk.id}} class="btn btn-outline-primary"> Generate {{stk.id}}</button>
                                                         </div>
 
                                                     </form>
-                                                    </td>
+                                                </td>
                                             </tr>
                                         {% endfor %}
                                         

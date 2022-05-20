@@ -9,6 +9,7 @@ from .validators import *
 from django.contrib.auth.password_validation import validate_password
 from django.core.validators import validate_email
 from django.http import JsonResponse
+from django.conf import settings
 from .utils import *
 
 
@@ -151,10 +152,10 @@ def reset_password(request):
         return redirect('login')
 
 
-def stocks(request):
+def sku_items(request):
     if 'id' in request.session:
-        stockList = Stock.objects.filter(is_generated=True)
-        return render(request,'doshi/stocks.html', {'stockList': stockList})
+        sku_list = SKUItems.objects.all()
+        return render(request,'doshi/sku-list.html', {'sku_list': sku_list})
 
     return redirect('login')
 
@@ -165,35 +166,20 @@ def invoices(request):
 
     return redirect('login')
 
-
 def barcodes(request):
-    if request.method == 'POST':
-        try:
-            get_stock = Stock.objects.get(pk=request.POST['stock_id'])
-            
-            if not StockBarcode.objects.filter(stock=get_stock).count() > 0 and get_stock.is_generated == False:
-                sno = generate()
-                StockBarcode.objects.create(serial_no=sno, stock=get_stock)
-                get_stock.is_generated = True
-                get_stock.save()
-                messages.success(request, 'Barcode Generated')
-                stockList = Stock.objects.filter(is_generated=False)
-                return render(request, 'doshi/barcodes.html',  {'stockList': stockList})
-            
-        except Exeception as e:
-            messages.error(request, e)
-            return redirect('barcodes')
-            
-
     if 'id' in request.session:
-        stockList = Stock.objects.filter(is_generated=False)
-        return render(request, 'doshi/barcodes.html', {'stockList': stockList})
-    
+        sku_list = SKUItems.objects.all()
+        return render(request,'doshi/sku-list.html', {'sku_list': sku_list})
+
     return redirect('login')
 
 
-def download_barcode(request):
-    pass    
+def barcodes(request):
+    if 'id' in request.session:
+        sku_list = SKUItems.objects.all()
+        return render(request,'doshi/barcodes.html', {'sku_list': sku_list})
+
+    return redirect('login')
 
 
 def exceptions(request):
@@ -203,6 +189,3 @@ def exceptions(request):
     return redirect('login')
         
 
-def createBarcode(request):
-
-    StockBarcode.objects.create(serial_no=generate())

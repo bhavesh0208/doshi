@@ -1,4 +1,5 @@
 from django.urls import path
+from django.conf.urls.static import static
 from .views import *
 
 urlpatterns = [
@@ -9,8 +10,9 @@ urlpatterns = [
     path('forgot-password/', forgot_password, name='forgot-password'),
     path('verify-otp/', verify_otp, name='verify-otp'),
     path('reset-password/', reset_password, name='reset-password'),
-    path('stocks/', stocks, name='stocks'),
+    path('sku-items/', sku_items, name='sku-items'),
     path('invoices/', invoices, name='invoices'),
     path('barcodes/', barcodes, name='barcodes'),
     path('exceptions/', exceptions, name='exceptions'),
-]
+    
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

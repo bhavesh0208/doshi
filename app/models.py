@@ -20,6 +20,21 @@ class User(models.Model):
         return self.name
 
 
+class SKUItems(models.Model):
+
+    sku_name = models.CharField(max_length=100, unique=True, default="")
+    sku_qty = models.IntegerField(default=0)
+    sku_rate = models.FloatField(default=0.0)
+    sku_serial_no = models.CharField(default="", max_length=200, unique=True)
+    sku_barcode_image = models.ImageField(upload_to='barcode/', default='backup/')
+
+    def __str__(self):
+        return self.sku_name
+
+
+
+
+'''
 class Stock(models.Model):
     stock_name = models.CharField(max_length=100, unique=True, default="")
     stock_qty = models.IntegerField(default=0)
@@ -38,5 +53,5 @@ class StockBarcode(models.Model):
 
     def __str__(self):
         return self.serial_no
-
+'''
     

@@ -9,14 +9,10 @@ class UserModelAdmin(admin.ModelAdmin):
 
 
 
-class StockModelAdmin(admin.ModelAdmin):
-    list_display = ['id', 'stock_name', 'stock_qty', 'stock_rate', 'is_generated']
+class SKUItemsModelAdmin(admin.ModelAdmin):
+    list_display = ['id', 'sku_name', 'sku_qty', 'sku_rate', 'sku_serial_no']
 
-
-class StockBarcodeModelAdmin(admin.ModelAdmin):
-    list_display = ['serial_no', 'stock', 'barcode_image']
 
 
 admin.site.register(User, UserModelAdmin)
-admin.site.register(Stock, StockModelAdmin)
-admin.site.register(StockBarcode, StockBarcodeModelAdmin)
+admin.site.register(SKUItems, SKUItemsModelAdmin)

@@ -47,6 +47,8 @@
             <!-- Divider -->
             <hr class="sidebar-divider my-0">
 
+
+            
             <!-- Nav Item - Dashboard -->
             <li class="nav-item active">
                 <a class="nav-link" href="{% url 'index' %}">
@@ -65,15 +67,15 @@
 
             <!-- Nav Item - Charts -->
             <li class="nav-item">
-                <a class="nav-link" href="{% url 'stocks' %}">
+                <a class="nav-link" href="{% url 'sku-items' %}">
                     <i class="fas fa-fw fa-chart-area"></i>
-                    <span>Stocks</span></a>
+                    <span>SKU Items</span></a>
             </li>
 
             <!-- Nav Item - Tables -->
             <li class="nav-item">
                 <a class="nav-link" href="{% url 'invoices' %}">
-                    <i class="fas fa-fw fa-table"></i>
+                    <i class="fas fa-fw fa-wrench"></i>
                     <span>Invoices</span></a>
             </li>
 
@@ -320,7 +322,7 @@
                 <div class="container-fluid">
 
                     <!-- Page Heading -->
-                    <h1 class="h3 mb-2 text-gray-800">Stocks</h1>
+                    <h1 class="h3 mb-2 text-gray-800">sku-items</h1>
                     <p class="mb-4">DataTables is a third party plugin that is used to generate the demo table below.
                         For more information about DataTables, please visit the <a target="_blank"
                             href="https://datatables.net">official DataTables documentation</a>.</p>
@@ -340,22 +342,23 @@
                                             <th>Total Quantity</th>
                                             <th>Stock Rate</th>
                                             <th>Total Amount</th>
-                        
+                                            <th>Barcode</th>
                                             <th>Download Barcode</th>
                                         </tr>
                                     </thead>
                                     
                                     <tbody>
-                                        {% for stk in stockList %}
+                                        {% for stk in sku_list %}
                                             <tr>
                                                 <td>{{ forloop.counter }}</td>
-                                                <td>{{ stk.stock_name }}</td>
-                                                <td>{{ stk.stock_qty }}</td>
-                                                <td>{{ stk.stock_rate }}</td>
+                                                <td>{{ stk.sku_name }}</td>
+                                                <td>{{ stk.sku_qty }}</td>
+                                                <td>{{ stk.sku_rate }}</td>
                                                 <td></td>
-                                                <!--<td><a id="show-file-onclick" href="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Gull_portrait_ca_usa.jpg/300px-Gull_portrait_ca_usa.jpg"  type="btn btn-secondary" id={{stk.id}}></a></td>-->
-                                                <td><a id="show-file-onclick" href="https://cdn.pixabay.com/photo/2022/02/21/06/26/insect-7025881_960_720.jpg" class="btn btn-info" role="button" download>Link Button</a></td>
-                                                <td><button type="button" id={{stk.id}} class="btn btn-outline-primary">Download</button></td>
+                                                <td>{{ stk.sku_serial_no }}</td>
+                                                
+                                                <td><a id="" href="{{MEDIA}}{{ stk.sku_barcode_image.url }}" role="button" class="btn btn-outline-primary" download>Download</a></td>
+                                                
                                             </tr>
                                         {% endfor %}
                                         

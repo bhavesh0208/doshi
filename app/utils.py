@@ -1,11 +1,12 @@
 from threading import Thread
 from django.core.mail import send_mail
-from barcode import EAN13
+from barcode import EAN13, generate
 from random import randint
-from .models import StockBarcode
+from .models import *
 from io import BytesIO
 from barcode.writer import ImageWriter
 from django.conf import settings
+import os
 
 
 class EmailThread(Thread):
@@ -20,11 +21,20 @@ class EmailThread(Thread):
         message = f"Please use the verification code below on the Doshi website: \n Your otp is {self.otp} \n If you didn't request this, you can ignore this email or let us know."
         send_mail("Hello", message, from_email, [to])
 
-        
-def generate():
+
+'''
+def generate_barcode():
     sno = EAN13(str(randint(100000000000, 999999999999)), writer=ImageWriter())
+    
+    # barcode_path = os.path.join(settings.MEDIA_URL ,"barcode/")
+    
     if StockBarcode.objects.filter(serial_no=sno).count() > 0:
-        generate()
+        generate_barcode()
     else:
-        sno.save('Barcode_{}'.format(sno.ean))
+        filename = "Barcode_{}".format(sno)
+        
+        with open("./media/barcodes/{}.png".format(filename), "wb") as f:
+            EAN13(sno.ean, writer=ImageWriter()).write(f)
+        
         return sno.ean
+'''   

@@ -1,6 +1,17 @@
 asgiref==3.5.1
+black==22.3.0
+click==8.1.3
+colorama==0.4.4
 Django==3.2.2
 django-shortcuts==1.6
+mypy-extensions==0.4.3
 mysql-connector==2.2.9
+mysqlclient==2.1.0
+pathspec==0.9.0
+Pillow==9.1.1
+platformdirs==2.5.2
+python-barcode==0.14.0
 pytz==2022.1
 sqlparse==0.4.2
+tomli==2.0.1
+typing_extensions==4.2.0
