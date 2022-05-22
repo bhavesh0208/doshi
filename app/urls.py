@@ -12,6 +12,7 @@ urlpatterns = [
     path('reset-password/', reset_password, name='reset-password'),
     path('sku-items/', sku_items, name='sku-items'),
     path('invoices/', invoices, name='invoices'),
+    path('invoices/invoice-verify/<int:invoice_no>', invoice_verify, name='invoice-verify'),
     path('barcodes/', barcodes, name='barcodes'),
     path('exceptions/', exceptions, name='exceptions'),
     

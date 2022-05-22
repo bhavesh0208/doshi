@@ -42,7 +42,7 @@ def register(request):
                         User.objects.create(name=name, email=email, contact=contact, password=password)
                         return redirect('login')
                     except ValidationError as e:
-                        # print(list(e.message_dict.values()), type(e.message_dict))
+                        
 
                         messages.error(request, e.message_dict.values())
                         return redirect('register')
@@ -82,7 +82,6 @@ def login(request):
 
     return render(request, 'doshi/login.html')
         
-
 
 def logout(request):
     if 'id' in request.session:
@@ -154,7 +153,7 @@ def reset_password(request):
 
 def sku_items(request):
     if 'id' in request.session:
-        sku_list = SKUItems.objects.all()
+        sku_list = SKUItems.objects.exclude(sku_serial_no = None)
         return render(request,'doshi/sku-list.html', {'sku_list': sku_list})
 
     return redirect('login')
@@ -162,21 +161,31 @@ def sku_items(request):
 
 def invoices(request):
     if 'id' in request.session:
-        return render(request, 'doshi/invoices.html')
+        invoices = Invoice.objects.all().values('invoice_no').distinct()
+        return render(request, 'doshi/invoices.html', {'invoices': invoices})
 
     return redirect('login')
+    
 
 def barcodes(request):
+    if request.method == 'POST':
+        try:
+            sku_id = request.POST['sku_id']
+            get_sku = SKUItems.objects.filter(pk=sku_id, sku_serial_no=None)
+            
+            if get_sku.count() > 0:
+                sno, filename = generate_barcode()
+                get_sku.update(sku_serial_no = sno, sku_barcode_image = os.path.join('barcode/', filename))
+                
+            else:
+                raise Exception('Unable to generate barcode ')
+        except Exception as e:
+            print(e)
+            messages.error(request, e)
+            return redirect('barcodes')
+        
     if 'id' in request.session:
-        sku_list = SKUItems.objects.all()
-        return render(request,'doshi/sku-list.html', {'sku_list': sku_list})
-
-    return redirect('login')
-
-
-def barcodes(request):
-    if 'id' in request.session:
-        sku_list = SKUItems.objects.all()
+        sku_list = SKUItems.objects.filter(sku_serial_no=None)
         return render(request,'doshi/barcodes.html', {'sku_list': sku_list})
 
     return redirect('login')
@@ -189,3 +198,16 @@ def exceptions(request):
     return redirect('login')
         
 
+def invoice_verify(request, invoice_no):
+    if request.method == 'POST':
+
+        print(request.POST['barcodeInput'])
+        return redirect('invoice-verify')   
+
+    if 'id' in request.session:
+        invoice_sku_list = Invoice.objects.filter(invoice_no=str(invoice_no))
+        barcode_list = SKUItems.objects.all().values('sku_name', 'sku_serial_no', 'sku_qty')
+        # request.session['barcode-list'] = dict(barcode_list)
+        return render(request, 'doshi/invoice-verify.html', {'invoice_sku_list': invoice_sku_list, 'invoice_no': invoice_no})
+
+    return redirect('login')

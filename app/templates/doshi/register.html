@@ -1,115 +1,186 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
-
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="description" content="">
-    <meta name="author" content="">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <meta name="description" content="" />
+    <meta name="author" content="" />
 
     <title>SB Admin 2 - Register</title>
 
     <!-- Custom fonts for this template-->
-    <link href="{% static 'assets/vendor/fontawesome-free/css/all.min.css' %}" rel="stylesheet" type="text/css">
     <link
-        href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
-        rel="stylesheet">
+      href="{% static 'assets/vendor/fontawesome-free/css/all.min.css' %}"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
+      rel="stylesheet"
+    />
 
     <!-- Custom styles for this template-->
-    <link href="{% static 'assets/css/sb-admin-2.min.css' %}" rel="stylesheet">
+    <link
+      href="{% static 'assets/css/sb-admin-2.min.css' %}"
+      rel="stylesheet"
+    />
+    <style type="text/css">
+      .bg-register {
+        background: url("/static/assets/img/xyz.png");
+        background-position: center;
+        background-size: cover;
+      }
+    </style>
+  </head>
 
-</head>
-
-<body class="bg-gradient-primary">
-
+  <body class="bg-gradient-primary">
     <div class="container">
+      <div class="card o-hidden border-0 shadow-lg my-5">
+        <div class="card-body p-0">
+          <!-- Nested Row within Card Body -->
+          <div class="row">
+            <div class="col-lg-5 d-none d-lg-block bg-register"></div>
 
-        <div class="card o-hidden border-0 shadow-lg my-5">
-            <div class="card-body p-0">
-                <!-- Nested Row within Card Body -->
-                <div class="row">
-                    <div class="col-lg-5 d-none d-lg-block bg-register" 
-                        style="background: url(https://images.unsplash.com/photo-1553413077-190dd305871c?crop=entropy&cs=tinysrgb&fm=jpg&ixlib=rb-1.2.1&q=60&raw_url=true&ixid=MnwxMjA3fDB8MHxzZWFyY2h8MXx8d2FyZWhvdXNlfGVufDB8fDB8fA%3D%3D&auto=format&fit=crop&w=500);background-position: center;background-size: cover;">
-                    </div>
-                    
-
-                    <div class="col-lg-7">
-                        <div class="p-5">
-                            <div class="text-center">
-                                <h1 class="h4 text-gray-900 mb-4">Create an Account!</h1>
-                            </div>
-                            <form method="post" action="{% url 'register' %}" class="user needs-validation" novalidate>
-                                {% csrf_token %}
-
-                                {% if messages %}
-                                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                                        {% for message in messages %}
-                                            
-                                            <strong>{{ message }}</strong>
-                                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                                <span aria-hidden="true">&times;</span>
-                                            </button>
-                                        {% endfor %}
-                                    </div>
-                                {% endif %}
-
-                                <div class="form-group row">
-                                    <div class="col-sm-6 mb-3 mb-sm-0">
-                                        <input type="text" class="form-control form-control-user" id="exampleInputName" name="registerName" pattern="[A-Za-z]{2,}"
-                                            placeholder="Name" required>
-                                        <div class=" ml-3 valid-feedback"> Looks good!</div>
-                                        <div class=" ml-3 invalid-feedback">Please provide a valid name.</div>
-                                    </div>
-                                    <div class="form-group col-sm-6 mb-3 mb-sm-0">
-                                        <input type="text" class="form-control form-control-user" id="exampleInputContact" name="registerContact" pattern="[0-9]{10}"
-                                            placeholder="Contact Number" required>
-                                        <div class=" ml-3 valid-feedback"> Looks good!</div>
-                                        <div class=" ml-3 invalid-feedback">Please provide 10 digit mobile number</div>
-                                    </div>
-                                </div>
-
-                                <div class="form-group">
-                                    <input type="email" class="form-control form-control-user" id="exampleInputEmail" name="registerEmail"
-                                        placeholder="Email Address" required>
-                                    <div class=" ml-3 valid-feedback"> Looks good!</div>
-                                    <div class=" ml-3 invalid-feedback">Please provide a valid email address.</div>
-                                </div>
-
-                                <div class="form-group">
-                                    <div class="input-group">
-                                        <input type="password" class="form-control form-control-user" name="registerPassword"  pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}" 
-                                                id="exampleInputPassword" placeholder="Password" required>
-                                                
-                                                <span class="input-group-append">
-                                                    <div  id="togglePassword" style=" border-bottom-right-radius: 25px; border-top-right-radius: 25px;" class="form-control form-control-user input-group-text bg-transparent"><i class="fa fa-eye" id="togglePassword" aria-hidden="true"></i></div>
-                                                </span>
-                                                <div class=" ml-3 valid-feedback"> Looks good!</div>
-                                                <div class=" ml-3 invalid-feedback">A minimum 8 characters password contains a combination of uppercase and lowercase letter and number are required.</div>
-                                        
-                                    </div>
-                                     
-                                </div>
-
-                                
-                                <button type="submit" class="btn btn-primary btn-user btn-block">
-                                    Register Account
-                                </button>
-                                
-                            </form>
-                            <hr>
-                            
-                            <div class="text-center">
-                                <a class="small" href="{% url 'login' %}">Already have an account? Login!</a>
-                            </div>
-                        </div>
-                    </div>
+            <div class="col-lg-7">
+              <div class="p-5">
+                <div class="text-center">
+                  <h1 class="h4 text-gray-900 mb-4">Create an Account!</h1>
                 </div>
-            </div>
-        </div>
+                <form
+                  method="post"
+                  action="{% url 'register' %}"
+                  class="user needs-validation"
+                  novalidate
+                >
+                  {% csrf_token %} {% if messages %}
+                  <div
+                    class="alert alert-danger alert-dismissible fade show"
+                    role="alert">
+                    
+                    {% for message in messages %}
 
+                    <strong>{{ message }}</strong>
+                    <button
+                      type="button"
+                      class="close"
+                      data-dismiss="alert"
+                      aria-label="Close"
+                    >
+                      <span aria-hidden="true">&times;</span>
+                    </button>
+                    {% endfor %}
+                  </div>
+                  {% endif %}
+
+                  <div class="form-group row">
+                    <div class="col-sm-6 mb-3 mb-sm-0">
+                      <input
+                        type="text"
+                        class="form-control form-control-user"
+                        id="exampleInputName"
+                        name="registerName"
+                        pattern="[A-Za-z]{2,}"
+                        placeholder="Name"
+                        required
+                      />
+                      <div class="ml-3 valid-feedback">Looks good!</div>
+                      <div class="ml-3 invalid-feedback">
+                        Please provide a valid name.
+                      </div>
+                    </div>
+                    <div class="form-group col-sm-6 mb-3 mb-sm-0">
+                      <input
+                        type="text"
+                        class="form-control form-control-user"
+                        id="exampleInputContact"
+                        name="registerContact"
+                        pattern="[0-9]{10}"
+                        placeholder="Contact Number"
+                        required
+                      />
+                      <div class="ml-3 valid-feedback">Looks good!</div>
+                      <div class="ml-3 invalid-feedback">
+                        Please provide 10 digit mobile number
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <input
+                      type="email"
+                      class="form-control form-control-user"
+                      id="exampleInputEmail"
+                      name="registerEmail"
+                      placeholder="Email Address"
+                      required
+                    />
+                    <div class="ml-3 valid-feedback">Looks good!</div>
+                    <div class="ml-3 invalid-feedback">
+                      Please provide a valid email address.
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <div class="input-group">
+                      <input
+                        type="password"
+                        class="form-control form-control-user"
+                        name="registerPassword"
+                        pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}"
+                        id="exampleInputPassword"
+                        placeholder="Password"
+                        required
+                      />
+
+                      <span class="input-group-append">
+                        <div
+                          id="togglePassword"
+                          style="
+                            border-bottom-right-radius: 25px;
+                            border-top-right-radius: 25px;
+                          "
+                          class="form-control form-control-user input-group-text bg-transparent"
+                        >
+                          <i
+                            class="fa fa-eye"
+                            id="togglePassword"
+                            aria-hidden="true"
+                          ></i>
+                        </div>
+                      </span>
+                      <div class="ml-3 valid-feedback">Looks good!</div>
+                      <div class="ml-3 invalid-feedback">
+                        A minimum 8 characters password contains a combination
+                        of uppercase and lowercase letter and number are
+                        required.
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    class="btn btn-primary btn-user btn-block"
+                  >
+                    Register Account
+                  </button>
+                </form>
+                <hr />
+
+                <div class="text-center">
+                  <a class="small" href="{% url 'login' %}"
+                    >Already have an account? Login!</a
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Bootstrap core JavaScript-->
@@ -122,36 +193,47 @@
     <!-- Custom scripts for all pages-->
     <script src="{% static 'assets/js/sb-admin-2.min.js' %}"></script>
     <script>
-        const togglePassword = document.getElementById('togglePassword');
-        const password = document.getElementById('exampleInputPassword');
-        
-        togglePassword.addEventListener('click', function(e) {
-            const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
-            password.setAttribute('type', type);
-            togglePassword.getElementsByTagName('i').toggle('fa-eye-slash');
-        })
-    </script>
-    
-    <script>
-        // Example starter JavaScript for disabling form submissions if there are invalid fields
-        (function() {
-          'use strict';
-          window.addEventListener('load', function() {
-            // Fetch all the forms we want to apply custom Bootstrap validation styles to
-            var forms = document.getElementsByClassName('needs-validation');
-            // Loop over them and prevent submission
-            var validation = Array.prototype.filter.call(forms, function(form) {
-              form.addEventListener('submit', function(event) {
-                if (form.checkValidity() === false) {
-                  event.preventDefault();
-                  event.stopPropagation();
-                }
-                form.classList.add('was-validated');
-              }, false);
-            });
-          }, false);
-        })();
-    </script>
-</body>
+      const togglePassword = document.getElementById("togglePassword");
+      const password = document.getElementById("exampleInputPassword");
 
+      togglePassword.addEventListener("click", function (e) {
+        const type =
+          password.getAttribute("type") === "password" ? "text" : "password";
+        password.setAttribute("type", type);
+        togglePassword.getElementsByTagName("i").toggle("fa-eye-slash");
+      });
+    </script>
+
+    <script>
+      // Example starter JavaScript for disabling form submissions if there are invalid fields
+      (function () {
+        "use strict";
+        window.addEventListener(
+          "load",
+          function () {
+            // Fetch all the forms we want to apply custom Bootstrap validation styles to
+            var forms = document.getElementsByClassName("needs-validation");
+            // Loop over them and prevent submission
+            var validation = Array.prototype.filter.call(
+              forms,
+              function (form) {
+                form.addEventListener(
+                  "submit",
+                  function (event) {
+                    if (form.checkValidity() === false) {
+                      event.preventDefault();
+                      event.stopPropagation();
+                    }
+                    form.classList.add("was-validated");
+                  },
+                  false
+                );
+              }
+            );
+          },
+          false
+        );
+      })();
+    </script>
+  </body>
 </html>

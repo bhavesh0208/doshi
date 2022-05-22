@@ -333,12 +333,22 @@
                   <h6 class="m-0 font-weight-bold text-primary">
                     SKU List
                   </h6>
+                  <br>
+                <div>
+                  <form method="post" action="{% url 'invoice-verify' invoice_no %}" class="needs-validation" novalidate>
+                    
+                    <input class="form-control" id="barcodeInput" type="text" placeholder="Please provide 13-digit Barcode Number" name="barcodeInput" pattern="[0-9]{13}"minlength="13", maxlength="13">
+                    <div class="valid-feedback">Valid.</div>
+                    <div class="invalid-feedback">Please enter valid 13 digit barcode</div>
+                </form>
+                </div>
+
                 </div>
                 <div class="card-body">
                   <div class="table-responsive">
                     <table
-                      class="table table-bordered"
-                      id="stockDataTable"
+                      class="table table-bordered table-hover table-hover-primary"
+                      
                       width="100%"
                       cellspacing="0"
                     >
@@ -346,26 +356,22 @@
                         <tr>
                             <th>Sr.No.</th>
                             <th>SKU Name</th>
-                            <th>Total Quantity</th>
-                            <th>Stock Rate</th>
-                            <th>Total Amount</th>
-                            <th>Barcode No</th>
-                            <th>Download Barcode</th>
+                            <th>SKU Total Quantity</th>
+                            <th>SKU Item Rate</th>
+                            <th>SKU Item Amount</th>
+                            <th> Status </th>
                         </tr>
                       </thead>
                       
-                      <tbody>
-                        {% for stk in sku_list %}
+                      <tbody id="stockDataTable">
+                        {% for stk in invoice_sku_list %}
                             <tr>
                                 <td>{{ forloop.counter }}</td>
-                                <td>{{ stk.sku_name }}</td>
-                                <td>{{ stk.sku_qty }}</td>
-                                <td>{{ stk.sku_rate }}</td>
+                                <td>{{ stk.invoice_item }}</td>
+                                <td>{{ stk.invoice_item_qty }}</td>
+                                <td>{{ stk.invoice_item_rate }}</td>
+                                <td>{{ stk.invoice_item_amount }}</td>
                                 <td></td>
-                                <td>{{ stk.sku_serial_no }}</td>
-                                
-                                <td><a id="" href="{{MEDIA}}{{ stk.sku_barcode_image.url }}" role="button" class="btn btn-outline-primary" download><i class='fas fa-download'>  Download</i></a></td>
-                                
                             </tr>
                         {% endfor %}
                         
@@ -440,19 +446,22 @@
     <!-- Page level custom scripts -->
     <script src="{% static 'assets/js/demo/datatables-demo.js' %}"></script>
 
-    <script>
-            var stockData = document.getElementById('stockDataTable');
-            for (var i = 1; i < stockData.rows.length; i++){
-                stockQty = stockData.rows[i].cells.item(2).innerHTML;
-                stockRate = stockData.rows[i].cells.item(3).innerHTML;
-                stockData.rows[i].cells.item(4).innerHTML = (stockQty * stockRate).toFixed(1);
-            }
-    </script>
 
     <script>
         $(document).ready(function() {
-            $('#stockDataTable').DataTable();
+            $('#invoiceVerifyDataTable').DataTable();
         })
+    </script>
+
+    <script>
+        $(document).ready(function(){
+            $("#barcodeInput").on("keyup", function() {
+              var value = $(this).val();
+              if (!value.checkValidity()) {
+
+              }
+            });
+          });
     </script>
 </body>
 
