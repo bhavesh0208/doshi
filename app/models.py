@@ -1,9 +1,7 @@
 from django.db.models import *
 from django.core.validators import validate_email
-from django.contrib.auth import password_validation
 from django.contrib.auth.password_validation import validate_password
-from .validators import * 
-from random import randint
+from .validators import *
 from datetime import date
 
 
