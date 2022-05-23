@@ -13,7 +13,6 @@ def validate_name(value):
     if len(value) < 2:
         raise ValidationError(_('Name must contains atleast 2 characters'), params={'value': value})
     elif not value.isalpha():
-        print("Hello World !!sss")
         raise ValidationError(_('Name must contains alphabets only'), params={'value': value})
     else:
         return value
