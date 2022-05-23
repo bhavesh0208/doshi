@@ -1,5 +1,5 @@
 """
-WSGI config for doshi project.
+WSGI config for SB Admin 2 project.
 
 It exposes the WSGI callable as a module-level variable named ``application``.
 
