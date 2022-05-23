@@ -324,16 +324,15 @@
                     <!-- Page Heading -->
                     <h1 class="h3 mb-2 text-gray-800">Stock Keeping Units
 
-                    </h1> 
-                    
-                    
+                    </h1>
                         <!-- DataTales Example -->
             <div class="card shadow mb-4">
                 
                 <div class="card-header py-3">
                   <h6 class="m-0 font-weight-bold text-primary">
-                    SKU List
+                    Invoice no : {{invoice_no}}
                   </h6>
+                  <input type="hidden" name="invoice" id="invoice-no" value="{{invoice_no}}">
                   <br>
                 <div>
                   <form method="post" action="{% url 'invoice-verify' invoice_no %}" id="needs-validation" novalidate>
@@ -466,10 +465,9 @@
     <script>
         $(document).ready(function() {
             $("#barcodeInput").on("keyup", function(e) {
-          
+
               //Fetch form to apply custom Bootstrap validation
               var form = $("#needs-validation");
-          
               if (!form[0].checkValidity()) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -484,11 +482,13 @@
     <script>
         $('#barcodeInput').on('input', function(){
             var barcode_no = $(this).val();
-            var check_sku = $('#1').text()
+            var check_sku = $('#1').text();
+            var invoice_no = $('#invoice-no').val();
             $.ajax({
                 type: "POST",
                 url: "{% url 'verify-invoice' %}",
                 data: {
+                    'invoice': invoice_no,
                     'barcode': barcode_no,
                     'check-sku': check_sku,
                     'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val(),

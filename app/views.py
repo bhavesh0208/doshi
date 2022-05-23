@@ -237,10 +237,17 @@ def verifyInvoice(request):
 
         print(request.POST['barcode'])
         print(request.POST['check-sku'])
+        print(request.POST['invoice'])
 
         try:
 
             get_sku = SKUItems.objects.get(sku_serial_no=request.POST['barcode'])
+
+            get_invoice = Invoice.objects.filter(invoice_no=request.POST['invoice']).values('invoice_item__sku_name')
+
+            get_sku_list = [i['invoice_item__sku_name'] for i in get_invoice]
+
+            print("GET SKU LIST : ", get_sku_list)
 
             print("SKU GET : ", get_sku.sku_name)
 
@@ -250,10 +257,16 @@ def verifyInvoice(request):
                     'data': "Done Deal !!"
                 })
 
+            elif get_sku.sku_name in get_sku_list:
+
+                return JsonResponse({
+                    'data': "SKU in Invoice"
+                })
+
             else:
 
                 return JsonResponse({
-                    'data': "Ready to Exchange ..."
+                    'data': "Do you want to continue with this product ?"
                 })
 
         except Exception as ep:
@@ -261,7 +274,7 @@ def verifyInvoice(request):
             print("Invoice Verify Error : ", ep)
 
             return JsonResponse({
-                'data': ''
+                'data': 'SKU is not present'
             })
 
     return redirect('invoices')
