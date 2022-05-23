@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from .models import *
 from django.core.mail import send_mail
 from django.core.files import File
@@ -8,9 +8,9 @@ from random import randint
 from .validators import * 
 from django.contrib.auth.password_validation import validate_password
 from django.core.validators import validate_email
-from django.http import JsonResponse
 from django.conf import settings
 from .utils import *
+from django.urls import reverse
 
 
 # Create your views here.
@@ -161,7 +161,7 @@ def sku_items(request):
 
 def invoices(request):
     if 'id' in request.session:
-        invoices = Invoice.objects.all().values('invoice_no').distinct()
+        invoices = Invoice.objects.all().values('invoice_no', 'invoice_party_name', 'invoice_date', 'invoice_total_amount').distinct()
         return render(request, 'doshi/invoices.html', {'invoices': invoices})
 
     return redirect('login')
@@ -198,16 +198,38 @@ def exceptions(request):
     return redirect('login')
         
 
-def invoice_verify(request, invoice_no):
-    if request.method == 'POST':
+def invoice_verify(request, invoice_no):  
+    invoice_sku_list = Invoice.objects.filter(invoice_no=str(invoice_no), invoice_item_scanned_status=False)
+    invoice_barcode_list = [i.invoice_item.sku_serial_no for i in invoice_sku_list]
+    request.session['invoice_barcode_list'] = invoice_barcode_list
+    
+    try:
+        if request.method == 'POST':
+            barcode_no = request.POST['barcodeInput']
+            
+            if len(barcode_no) != 13:
+                raise Exception('Barcode length must be 13')
+                return render(request, 'doshi/invoice-verify.html', {'invoice_no': invoice_no,'invoice_sku_list': invoice_sku_list})
+            
+            sku = SKUItems.objects.filter(sku_serial_no=barcode_no)
+            if sku.count() > 0:
+                invoice_obj = invoice_sku_list.filter(invoice_item=sku[0])
+                if invoice_obj.count() > 0:
+                    invoice_obj.update(invoice_item_scanned_status=True)
+                    invoice_sku_list = Invoice.objects.filter(invoice_no=str(invoice_no), invoice_item_scanned_status=False)
+                    print('hello')
+                    return HttpResponseRedirect(reverse('invoice-verify', args=(invoice_no,)))
+                else:
 
-        print(request.POST['barcodeInput'])
-        return redirect('invoice-verify')   
+                    raise Exception('hello world')
+            else:
+                raise Exception('Barcode does not exists please check SKU list and generate the barcode')
+            
+    except Exception as e:
+        messages.error(request, e)
+        return HttpResponseRedirect(reverse('invoice-verify', args=(invoice_no,)))
+
 
     if 'id' in request.session:
-        invoice_sku_list = Invoice.objects.filter(invoice_no=str(invoice_no))
-        barcode_list = SKUItems.objects.all().values('sku_name', 'sku_serial_no', 'sku_qty')
-        # request.session['barcode-list'] = dict(barcode_list)
         return render(request, 'doshi/invoice-verify.html', {'invoice_sku_list': invoice_sku_list, 'invoice_no': invoice_no})
 
-    return redirect('login')
