@@ -371,7 +371,7 @@
                         {% for stk in invoice_sku_list %}
                             <tr>
                                 <td>{{ forloop.counter }}</td>
-                                <td>{{ stk.invoice_item }}</td>
+                                <td id="1">{{ stk.invoice_item }}</td>
                                 <td>{{ stk.invoice_item_qty }}</td>
                                 <td>{{ stk.invoice_item_rate }}</td>
                                 <td>{{ stk.invoice_item_amount }}</td>
@@ -478,6 +478,29 @@
             })
           })
 
+    </script>
+
+
+    <script>
+        $('#barcodeInput').on('input', function(){
+            var barcode_no = $(this).val();
+            var check_sku = $('#1').text()
+            $.ajax({
+                type: "POST",
+                url: "{% url 'verify-invoice' %}",
+                data: {
+                    'barcode': barcode_no,
+                    'check-sku': check_sku,
+                    'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val(),
+                },
+                success: function(val){
+                    console.log(val);
+                    // if(val['data'] === "Done Deal !!"){
+                    //     location.reload();
+                    // }
+                }
+        })
+    })
     </script>
 
     

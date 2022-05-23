@@ -15,5 +15,6 @@ urlpatterns = [
     path('invoices/invoice-verify/<int:invoice_no>', invoice_verify, name='invoice-verify'),
     path('barcodes/', barcodes, name='barcodes'),
     path('exceptions/', exceptions, name='exceptions'),
+    path('verify-invoice', verifyInvoice, name="verify-invoice"),
     
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

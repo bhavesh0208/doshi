@@ -206,19 +206,16 @@ def invoice_verify(request, invoice_no):
     try:
         if request.method == 'POST':
             barcode_no = request.POST['barcodeInput']
-            
-            if len(barcode_no) != 13:
-                raise Exception('Barcode length must be 13')
-                return render(request, 'doshi/invoice-verify.html', {'invoice_no': invoice_no,'invoice_sku_list': invoice_sku_list})
-            
+
             sku = SKUItems.objects.filter(sku_serial_no=barcode_no)
             if sku.count() > 0:
                 invoice_obj = invoice_sku_list.filter(invoice_item=sku[0])
                 if invoice_obj.count() > 0:
                     invoice_obj.update(invoice_item_scanned_status=True)
                     invoice_sku_list = Invoice.objects.filter(invoice_no=str(invoice_no), invoice_item_scanned_status=False)
-                    print('hello')
-                    return HttpResponseRedirect(reverse('invoice-verify', args=(invoice_no,)))
+                    return JsonResponse({
+                        'data': 'success'
+                    })
                 else:
 
                     raise Exception('hello world')
@@ -233,3 +230,38 @@ def invoice_verify(request, invoice_no):
     if 'id' in request.session:
         return render(request, 'doshi/invoice-verify.html', {'invoice_sku_list': invoice_sku_list, 'invoice_no': invoice_no})
 
+
+def verifyInvoice(request):
+
+    if request.method == "POST":
+
+        print(request.POST['barcode'])
+        print(request.POST['check-sku'])
+
+        try:
+
+            get_sku = SKUItems.objects.get(sku_serial_no=request.POST['barcode'])
+
+            print("SKU GET : ", get_sku.sku_name)
+
+            if get_sku.sku_name == request.POST['check-sku']:
+
+                return JsonResponse({
+                    'data': "Done Deal !!"
+                })
+
+            else:
+
+                return JsonResponse({
+                    'data': "Ready to Exchange ..."
+                })
+
+        except Exception as ep:
+
+            print("Invoice Verify Error : ", ep)
+
+            return JsonResponse({
+                'data': ''
+            })
+
+    return redirect('invoices')
