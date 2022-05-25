@@ -11,6 +11,7 @@ from django.core.validators import validate_email
 from django.conf import settings
 from .utils import *
 from django.urls import reverse
+from datetime import datetime
 
 
 # Create your views here.
@@ -191,10 +192,12 @@ def barcodes(request):
     return redirect('login')
 
 
-def exceptions(request):
-    if 'id' in request.session:
-        return render(request, 'doshi/exceptions.html')
+def bypassProducts(request):
 
+    if 'id' in request.session:
+        get_bypass_list = ByPassSKUModel.objects.all()
+        return render(request, 'doshi/bypass-products.html', {'bypass_list':get_bypass_list })
+        
     return redirect('login')
         
 
@@ -235,38 +238,47 @@ def verifyInvoice(request):
 
     if request.method == "POST":
 
-        print(request.POST['barcode'])
-        print(request.POST['check-sku'])
-        print(request.POST['invoice'])
-
         try:
-
+            # check in all sku list whether barcode exists or not --> returns and sku objecct
             get_sku = SKUItems.objects.get(sku_serial_no=request.POST['barcode'])
 
+            # Get invoice sku queryset
             get_invoice = Invoice.objects.filter(invoice_no=request.POST['invoice']).values('invoice_item__sku_name')
 
+            # convert above queryset to  list
             get_sku_list = [i['invoice_item__sku_name'] for i in get_invoice]
 
-            print("GET SKU LIST : ", get_sku_list)
+            # print("SKU GET : ", get_sku.sku_name)     BALL BEARING COK UC 206
 
-            print("SKU GET : ", get_sku.sku_name)
+            # print("GET SKU LIST : ", get_sku_list)       ['BALL BEARING COK UC 206', 'BALL BEARING COK UC 205']
+           
+            # print("get invoice -> ", get_invoice)   <QuerySet [{'invoice_item__sku_name': 'BALL BEARING COK UC 206'}, {'invoice_item__sku_name': 'BALL BEARING COK UC 205'}]>
 
             if get_sku.sku_name == request.POST['check-sku']:
-
+                Invoice.objects.filter(invoice_item__sku_name=get_sku.sku_name).update(invoice_item_scanned_status=True)
+                print('success')
+                
                 return JsonResponse({
-                    'data': "Done Deal !!"
+                    "status": "success",
+                    "msg": "SKU mapped"
                 })
 
             elif get_sku.sku_name in get_sku_list:
+                print('error')
 
                 return JsonResponse({
-                    'data': "SKU in Invoice"
+                    "status": "error",
+                    "msg": "SKU in Invoice"
+                    
                 })
 
             else:
-
+                print('warning')
                 return JsonResponse({
-                    'data': "Do you want to continue with this product ?"
+                    "status": "warning",
+                    "msg": "Do you want to continue with this product ?",
+                    "sku-name": get_sku.sku_name
+                    
                 })
 
         except Exception as ep:
@@ -274,7 +286,46 @@ def verifyInvoice(request):
             print("Invoice Verify Error : ", ep)
 
             return JsonResponse({
-                'data': 'SKU is not present'
+                "status": "error",
+                "msg": "SKU is not present"
             })
 
+    return redirect('invoices')
+
+
+def bypassInvoice(request):
+
+    if request.method == "POST":
+        print(request.POST)
+        
+        try:
+            invoice_no = request.POST['invoice']
+            sku_name = request.POST['sku_name']
+            sku_against_name = request.POST['sku_against_name']
+            date = request.POST['date']
+            time = request.POST['time']
+            
+            invoice_obj = Invoice.objects.filter(invoice_no=invoice_no)
+            print("Invoice obj -> ",invoice_obj)
+            sku_name_obj = SKUItems.objects.get(sku_name=sku_name)
+            print("SKU_obj -> ", sku_name_obj)
+            sku_against_name_obj = SKUItems.objects.get(sku_name=sku_against_name)
+            print("SKU_------->  ", sku_against_name_obj)
+            # date = datetime.strptime("%m/%d/%Y", date)
+            # time = datetime.strptime("%H:%M:%S %p", time)
+
+            ByPassSKUModel.objects.create(bypass_invoice_no=invoice_obj[0], bypass_sku_name=sku_name_obj, bypass_against_sku_name=sku_against_name_obj)
+
+            return JsonResponse({
+                "status": "success",
+                "msg": "record adddddddddddddddddddddddddd"
+            })
+
+        except Exception as e:
+            return JsonResponse({
+                "status": "error",
+                "msg": "record not adddddddddddddddddddddddd",
+                "issue": str(e)
+            })
+    
     return redirect('invoices')
