@@ -7,19 +7,23 @@ from io import BytesIO
 from barcode.writer import ImageWriter
 from django.conf import settings
 import os
+from django.core.mail import EmailMessage
 
 
 class EmailThread(Thread):
-    def __init__(self, email, otp):
+    def __init__(self, subject, body, email, attachments = None):
+        self.subject = subject
+        self.body = body
         self.email = email
-        self.otp = otp
+        self.attachments =attachments
         Thread.__init__(self)
 
     def run(self):
         from_email = "djangodeveloper09@gmail.com"
         to = self.email
-        message = f"Please use the verification code below on the Doshi website: \n Your otp is {self.otp} \n If you didn't request this, you can ignore this email or let us know."
-        send_mail("Hello", message, from_email, [to])
+        e = EmailMessage(self.subject, self.body, from_email, [to])
+        e.attach_file(self.attachments)
+        e.send()
 
 
 def generate_barcode():

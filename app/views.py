@@ -1,3 +1,4 @@
+from urllib import response
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
@@ -12,6 +13,7 @@ from django.conf import settings
 from .utils import *
 from django.urls import reverse
 from datetime import datetime
+import csv
 
 
 # Create your views here.
@@ -101,7 +103,8 @@ def forgot_password(request):
                 otp = randint(1000, 9999)
                 request.session['otp'] = otp
                 request.session['email'] = email
-                EmailThread(email, otp).start()
+                body = f"Please use the verification code below on the Doshi website: \n Your otp is {otp} \n If you didn't request this, you can ignore this email or let us know."
+                EmailThread('OTP Verification', body, email).start()
             messages.success(request, "OTP sent successfully on this email id...")
             return render(request, 'doshi/verify-otp.html', {'otp': otp, 'email': email})
         except Exception as e:
@@ -181,7 +184,6 @@ def barcodes(request):
             else:
                 raise Exception('Unable to generate barcode ')
         except Exception as e:
-            print(e)
             messages.error(request, e)
             return redirect('barcodes')
         
@@ -195,7 +197,7 @@ def barcodes(request):
 def bypassProducts(request):
 
     if 'id' in request.session:
-        get_bypass_list = ByPassSKUModel.objects.all()
+        get_bypass_list = ByPassModel.objects.all()
         return render(request, 'doshi/bypass-products.html', {'bypass_list':get_bypass_list })
         
     return redirect('login')
@@ -256,15 +258,12 @@ def verifyInvoice(request):
 
             if get_sku.sku_name == request.POST['check-sku']:
                 Invoice.objects.filter(invoice_item__sku_name=get_sku.sku_name).update(invoice_item_scanned_status=True)
-                print('success')
-                
                 return JsonResponse({
                     "status": "success",
                     "msg": "SKU mapped"
                 })
 
             elif get_sku.sku_name in get_sku_list:
-                print('error')
 
                 return JsonResponse({
                     "status": "error",
@@ -273,7 +272,6 @@ def verifyInvoice(request):
                 })
 
             else:
-                print('warning')
                 return JsonResponse({
                     "status": "warning",
                     "msg": "Do you want to continue with this product ?",
@@ -296,8 +294,6 @@ def verifyInvoice(request):
 def bypassInvoice(request):
 
     if request.method == "POST":
-        print(request.POST)
-        
         try:
             invoice_no = request.POST['invoice']
             sku_name = request.POST['sku_name']
@@ -314,7 +310,8 @@ def bypassInvoice(request):
             # date = datetime.strptime("%m/%d/%Y", date)
             # time = datetime.strptime("%H:%M:%S %p", time)
 
-            ByPassSKUModel.objects.create(bypass_invoice_no=invoice_obj[0], bypass_sku_name=sku_name_obj, bypass_against_sku_name=sku_against_name_obj)
+            Invoice.objects.filter(invoice_item__sku_name=sku_against_name_obj.sku_name).update(invoice_item_scanned_status=True)
+            ByPassModel.objects.create(bypass_invoice_no=invoice_obj[0], bypass_sku_name=sku_name_obj, bypass_against_sku_name=sku_against_name_obj)
 
             return JsonResponse({
                 "status": "success",
@@ -329,3 +326,40 @@ def bypassInvoice(request):
             })
     
     return redirect('invoices')
+
+
+def generate_csv(request):
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="Bypass_file.csv"'
+
+    writer = csv.writer(response)
+    writer.writerow(['Invoice_no', 'Bypass SKU Name', 'Bypass Against SKU Name', 'Bypass Datetime'])
+    
+    users = ByPassModel.objects.all().values_list('bypass_invoice_no__invoice_no', 'bypass_sku_name__sku_name', 'bypass_against_sku_name__sku_name', 'bypass_datetime')
+    
+    for user in users:
+        writer.writerow(user)
+    
+    return response
+
+
+
+def send_generate_csv(request):
+
+    with open('Bypass_file.csv', mode='w') as employee_file:
+        writer = csv.writer(employee_file)
+        writer.writerow(['Invoice_no', 'Bypass SKU Quantity', 'Bypass SKU Name', 'Bypass Against SKU Name', 'Bypass Datetime'])
+
+        users = ByPassModel.objects.all().values_list('bypass_invoice_no__invoice_no', 'bypass_sku_name__sku_qty', 'bypass_sku_name__sku_name', 'bypass_against_sku_name__sku_name', 'bypass_datetime')
+
+        for user in users:
+            writer.writerow(user)
+
+    user_email = User.objects.filter(pk=request.session['id'])[0].email
+    
+    EmailThread('Bypass SKU List CSV data', 'CSV file for Bypass SKU Items', user_email, attachments='Bypass_file.csv').start()
+    get_bypass_list = ByPassModel.objects.all()
+    messages.success(request, 'File sent to an email successfully.')
+    return render(request, 'doshi/bypass-products.html', {'bypass_list':get_bypass_list })
+        
+

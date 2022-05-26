@@ -3,8 +3,7 @@ from django.core.validators import validate_email
 from django.contrib.auth.password_validation import validate_password
 from .validators import *
 from datetime import date, datetime
-
-
+from django.utils import timezone
 
 # Create your models here.
 
@@ -48,11 +47,11 @@ class Invoice(Model):
         return self.invoice_no
 
 
-class ByPassSKUModel(Model):
+class ByPassModel(Model):
     bypass_invoice_no = ForeignKey(Invoice, on_delete=CASCADE, default=None, blank=True)
     bypass_sku_name = ForeignKey(SKUItems, on_delete=CASCADE, default=None, blank=True)
     bypass_against_sku_name = ForeignKey(SKUItems, on_delete=CASCADE, default=None, blank=True, related_name='bypass_against_sku_name+')
-    bypass_datetime = DateTimeField(default=datetime.now())
+    bypass_datetime = DateTimeField(default=timezone.now())
     
 
     def __str__(self):

@@ -16,10 +16,10 @@ class SKUItemsModelAdmin(admin.ModelAdmin):
 class InvoiceModelAdmin(admin.ModelAdmin):
     list_display = ['id', 'invoice_no', 'invoice_party_name', 'invoice_date', 'invoice_item', 'invoice_item_qty', 'invoice_item_rate']
 
-class ByPassSKUModelAdmin(admin.ModelAdmin):
+class ByPassModelAdmin(admin.ModelAdmin):
     list_display = ['id', 'bypass_invoice_no', 'bypass_sku_name', 'bypass_against_sku_name', 'bypass_datetime']
 
 admin.site.register(User, UserModelAdmin)
 admin.site.register(SKUItems, SKUItemsModelAdmin)
 admin.site.register(Invoice, InvoiceModelAdmin)
-admin.site.register(ByPassSKUModel, ByPassSKUModelAdmin)
+admin.site.register(ByPassModel, ByPassModelAdmin)

@@ -236,6 +236,7 @@
     <script>
       $(document).ready(function () {
         $("#barcodeInput").on("keyup", function (e) {
+          console.log("KEYUP");
           //Fetch form to apply custom Bootstrap validation
           var form = $("#needs-validation");
           if (!form[0].checkValidity()) {
@@ -248,11 +249,23 @@
     </script>
 
     <script>
-      $("#barcodeInput").on("input", function () {
+      $("#barcodeInput").on("input", function (event) {
         var barcode_no = $(this).val();
         var check_sku = $("#1").text();
         var invoice_no = $("#invoice-no").val();
 
+        var form = $("#needs-validation");
+
+        console.log(barcode_no)
+        if (!form[0].checkValidity()) {
+            console.log('executed......')
+            event.preventDefault();
+            event.stopPropagation();
+
+          }
+        else
+        {
+        form.addClass("was-validated");
         $.ajax({
           type: "POST",
           url: "{% url 'verify-invoice' %}",
@@ -274,6 +287,7 @@
             }
           },
         });
+      }
       });
     </script>
 
@@ -302,7 +316,7 @@
 
                 },
                 success: function(val){
-                    console.log(val);
+                    location.reload();
                 }
             })
             

@@ -17,5 +17,6 @@ urlpatterns = [
     path('bypass-products/', bypassProducts, name='bypass-products'),
     path('verify-invoice', verifyInvoice, name="verify-invoice"),
     path('bypass-invoice', bypassInvoice, name="bypass-invoice"),
+    path('generate-csv/', send_generate_csv, name='generate-csv')
     
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
