@@ -41,7 +41,7 @@
       <div id="content-wrapper" class="d-flex flex-column">
         <!-- Main Content -->
         <div id="content">
-          {% include 'doshi/topbar.html' %}
+          {% include 'doshi/topbar.html' with heading="Dashboard" %}
 
           <!-- Begin Page Content -->
           <div class="container-fluid">
@@ -49,7 +49,7 @@
             <div
               class="d-sm-flex align-items-center justify-content-between mb-4"
             >
-              <h1 class="h3 mb-0 text-gray-800">Dashboard</h1>
+              
               <a
                 href="#"
                 class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"
@@ -442,7 +442,7 @@
                       <img
                         class="img-fluid px-3 px-sm-4 mt-3 mb-4"
                         style="width: 25rem"
-                        src="img/undraw_posting_photo.svg"
+                        src="{% static 'assets/img/undraw_posting_photo.svg' %}"
                         alt="..."
                       />
                     </div>

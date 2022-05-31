@@ -267,7 +267,7 @@ def verifyInvoice(request):
 
                 return JsonResponse({
                     "status": "error",
-                    "msg": "SKU in Invoice"
+                    "msg": "SKU is present in Invoice. Please scan SKU present in first row"
                     
                 })
 
@@ -285,7 +285,7 @@ def verifyInvoice(request):
 
             return JsonResponse({
                 "status": "error",
-                "msg": "SKU is not present"
+                "msg": "SKU is not registered or might be barcode not generated for given SKU."
             })
 
     return redirect('invoices')
@@ -315,13 +315,13 @@ def bypassInvoice(request):
 
             return JsonResponse({
                 "status": "success",
-                "msg": "record adddddddddddddddddddddddddd"
+                "msg": "record added"
             })
 
         except Exception as e:
             return JsonResponse({
                 "status": "error",
-                "msg": "record not adddddddddddddddddddddddd",
+                "msg": "record not added",
                 "issue": str(e)
             })
     
@@ -343,9 +343,9 @@ def generate_csv(request):
     return response
 
 
-
+'''
 def send_generate_csv(request):
-
+    
     with open('Bypass_file.csv', mode='w') as employee_file:
         writer = csv.writer(employee_file)
         writer.writerow(['Invoice_no', 'Bypass SKU Quantity', 'Bypass SKU Name', 'Bypass Against SKU Name', 'Bypass Datetime'])
@@ -361,5 +361,6 @@ def send_generate_csv(request):
     get_bypass_list = ByPassModel.objects.all()
     messages.success(request, 'File sent to an email successfully.')
     return render(request, 'doshi/bypass-products.html', {'bypass_list':get_bypass_list })
+'''
         
 

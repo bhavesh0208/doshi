@@ -46,12 +46,10 @@
       <div id="content-wrapper" class="d-flex flex-column">
         <!-- Main Content -->
         <div id="content">
-          {% include 'doshi/topbar.html'%}
+          {% include 'doshi/topbar.html' with heading="Generate Barcode" %}
 
           <!-- Begin Page Content -->
           <div class="container-fluid">
-            <!-- Page Heading -->
-            <h1 class="h3 mb-2 text-gray-800">Generate Barcode</h1>
 
             <!-- DataTales Example -->
             <div class="card shadow mb-4">
@@ -103,7 +101,7 @@
                                 id="{{stk.id}}"
                                 class="btn btn-outline-primary"
                               >
-                                Generate
+                              <i class="fas fa-upload">  Generate</i>
                               </button>
                             </div>
                           </form>
@@ -208,7 +206,9 @@
 
     <script>
       $(document).ready(function () {
-        $("#barcodeDataTable").DataTable();
+        $("#barcodeDataTable").DataTable({
+          "lengthMenu": [[5, 10, 25, -1], [5, 10, 25, "All"]]
+        });
       });
     </script>
   </body>

@@ -36,7 +36,7 @@
       rel="stylesheet"
     />
   </head>
-
+id
   <body id="page-top">
     <!-- Page Wrapper -->
     <div id="wrapper">
@@ -46,13 +46,12 @@
       <div id="content-wrapper" class="d-flex flex-column">
         <!-- Main Content -->
         <div id="content">
-          {% include 'doshi/topbar.html' %}
+          {% include 'doshi/topbar.html' with heading="Invoice Details" %}
 
           <!-- Begin Page Content -->
           <div class="container-fluid">
             <!-- Page Heading -->
-            <h1 class="h3 mb-2 text-gray-800">Stock Keeping Units</h1>
-
+            
             <!--Toggle modal class-->
             <p id="OpenModal" data-toggle="modal" data-target="#warningModal" hidden>Open Modal</p>
 
@@ -79,14 +78,15 @@
                       placeholder="Please provide 13-digit Barcode Number"
                       name="barcodeInput"
                       pattern="[0-9]{13}"
-                      minlength="13"
                       maxlength="13"
+                      aria-describedby="validationServer03Feedback"
                       required
                     />
-                    <div class="valid-feedback">Valid.</div>
-                    <div class="invalid-feedback">
-                      Please enter valid 13 digit barcode number
+                    {% comment %} <div class="valid-feedback">Valid.</div> {% endcomment %}
+                    <div class="invalid-feedback" id="validationServer03Feedback">
+                        Please enter valid 13 digit barcode number
                     </div>
+                    
                   </form>
                 </div>
               </div>
@@ -105,7 +105,7 @@
                         <th>SKU Item Rate</th>
                         <th>SKU Item Amount</th>
                         <th>Barcode</th>
-                        <th>Status</th>
+                        
                       </tr>
                     </thead>
 
@@ -118,6 +118,7 @@
                         <td>{{ stk.invoice_item_rate }}</td>
                         <td>{{ stk.invoice_item_amount }}</td>
                         <td>{{ stk.invoice_item.sku_serial_no }}</td>
+                        {% comment %}
                         {% if stk.invoice_item_scanned_status == True %}
                         <td>
                           <h5>
@@ -131,6 +132,7 @@
                           </h5>
                         </td>
                         {% endif %}
+                        {% endcomment %}
                       </tr>
                       {% endfor %}
                     </tbody>
@@ -175,7 +177,9 @@
         
         <!-- Modal body -->
         <div class="modal-body">
+
             <form method="post" action="{% url 'bypass-invoice' %}">
+                
                 {% csrf_token %}
                 <div class="form-group row">
                   <label for="barcode" class="col-sm-2 col-form-label">Barcode</label>
@@ -229,65 +233,77 @@
 
     <script>
       $(document).ready(function () {
-        $("#invoiceVerifyDataTable").DataTable();
+        $("#invoiceVerifyDataTable").DataTable({
+          "lengthMenu": [[5, 10, 25, -1], [5, 10, 25, "All"]]
+        });
       });
     </script>
+
 
     <script>
       $(document).ready(function () {
         $("#barcodeInput").on("keyup", function (e) {
-          console.log("KEYUP");
           //Fetch form to apply custom Bootstrap validation
+          $('#barcodeInput').removeClass('is-invalid');
+          $('#validationServer03Feedback').html('Please enter valid 13 digit barcode number');
           var form = $("#needs-validation");
+
+          // post data for server
+          var check_sku = $("#1").text();
+          var barcode_no = $(this).val();
+          var invoice_no = $("#invoice-no").val();
+
           if (!form[0].checkValidity()) {
             e.preventDefault();
             e.stopPropagation();
-          }else
+            console.log('Not going anywhere....')
+          }
+          else if($("#stockDataTable tr").length == 0)
+          {
+            
+            var alert_element = '<div class=" m-3 alert alert-danger alert-dismissible fade show" role="alert"> <strong>Cannot proceed with empty table</strong><button type="button" class="close" data-dismiss="alert" aria-label="Close"> <span aria-hidden="true">&times;</span></button></div>';
+            
+            $(".container-fluid").before(alert_element);
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Not going anywhere because table is empty....');
+          }
+          else
+          {
+            console.log("going to server....");
+
+            $.ajax({
+              type: "POST",
+              url: "{% url 'verify-invoice' %}",
+              data: {
+                "invoice": invoice_no,
+                "barcode": barcode_no,
+                "check-sku": check_sku,
+                "csrfmiddlewaretoken": $("input[name=csrfmiddlewaretoken]").val(),
+              },
+              success: function (val) {
+                console.log(val);
+                if (val["status"] === "success") {
+                  location.reload();
+                } else if (val["status"] === "warning") {
+                  $("#OpenModal").click();
+                  $("#sku-name").attr("value", val["sku-name"]);
+                  $("#barcode").attr("value", barcode_no);
+                  $("#sku-against-name").attr("value", check_sku);
+                }
+                else
+                {
+                  const error_message = val['msg'];
+                  var alert_element = `<div class=" m-3 alert alert-danger alert-dismissible fade show" role="alert"> <strong>${error_message}</strong><button type="button" class="close" data-dismiss="alert" aria-label="Close"> <span aria-hidden="true">&times;</span></button></div>`;
+                  $(".container-fluid").before(alert_element);
+                  // $('#barcodeInput').addClass('is-invalid');
+                  // $('#validationServer03Feedback').html(val['msg']);
+                }
+              },
+            });
+          }
           form.addClass("was-validated");
         });
-      });
-    </script>
-
-    <script>
-      $("#barcodeInput").on("input", function (event) {
-        var barcode_no = $(this).val();
-        var check_sku = $("#1").text();
-        var invoice_no = $("#invoice-no").val();
-
-        var form = $("#needs-validation");
-
-        console.log(barcode_no)
-        if (!form[0].checkValidity()) {
-            console.log('executed......')
-            event.preventDefault();
-            event.stopPropagation();
-
-          }
-        else
-        {
-        form.addClass("was-validated");
-        $.ajax({
-          type: "POST",
-          url: "{% url 'verify-invoice' %}",
-          data: {
-            "invoice": invoice_no,
-            "barcode": barcode_no,
-            "check-sku": check_sku,
-            "csrfmiddlewaretoken": $("input[name=csrfmiddlewaretoken]").val(),
-          },
-          success: function (val) {
-            console.log(val);
-            if (val["status"] === "success") {
-              location.reload();
-            } else if (val["status"] === "warning") {
-              $("#OpenModal").click();
-              $("#sku-name").attr("value", val["sku-name"]);
-              $("#barcode").attr("value", barcode_no);
-              $("#sku-against-name").attr("value", check_sku);
-            }
-          },
-        });
-      }
       });
     </script>
 

@@ -33,7 +33,7 @@ class Invoice(Model):
     invoice_no = CharField(max_length=200, default="")
     invoice_party_name = CharField(max_length=200, default="")
     invoice_sales_ledger = CharField(max_length=200, default="")
-    invoice_date = DateField(default=date.today())
+    invoice_date = DateField(auto_now_add=True)
     invoice_item = ForeignKey(SKUItems, on_delete=CASCADE, default=None, blank=True)
     invoice_item_qty = IntegerField(default=0.0)
     invoice_item_rate = FloatField(default=0.0)
@@ -50,13 +50,10 @@ class Invoice(Model):
 class ByPassModel(Model):
     bypass_invoice_no = ForeignKey(Invoice, on_delete=CASCADE, default=None, blank=True)
     bypass_sku_name = ForeignKey(SKUItems, on_delete=CASCADE, default=None, blank=True)
-    bypass_against_sku_name = ForeignKey(SKUItems, on_delete=CASCADE, default=None, blank=True, related_name='bypass_against_sku_name+')
-    bypass_datetime = DateTimeField(default=timezone.now())
+    bypass_against_sku_name = ForeignKey(SKUItems, on_delete=CASCADE, default=None, blank=True, related_name='bypass_against_sku_name')
+    bypass_datetime = DateTimeField(auto_now_add=True)
     
 
     def __str__(self):
         return self.bypass_sku_name.sku_serial_no
-
-
-
 

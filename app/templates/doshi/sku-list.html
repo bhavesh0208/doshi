@@ -46,18 +46,19 @@
       <div id="content-wrapper" class="d-flex flex-column">
         <!-- Main Content -->
         <div id="content">
-          {% include 'doshi/topbar.html'%}
+          {% include 'doshi/topbar.html' with  heading="Stock Keeping Units" %}
 
           <!-- Begin Page Content -->
           <div class="container-fluid">
-            <!-- Page Heading -->
-            <h1 class="h3 mb-2 text-gray-800">Stock Keeping Units</h1>
 
             <!-- DataTales Example -->
             <div class="card shadow mb-4">
-              <div class="card-header py-3">
-                
+
+              <!--card-header---->
+                <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">SKU List</h6>
               </div>
+              
               <div class="card-body">
                 <div class="table-responsive">
                   <table
@@ -93,7 +94,7 @@
                             id=""
                             href="{{MEDIA}}{{ stk.sku_barcode_image.url }}"
                             role="button"
-                            class="btn btn-outline-primary"
+                            class="btn btn-outline-primary border-0"
                             download
                             ><i class="fas fa-download"> Download</i></a
                           >
@@ -192,13 +193,16 @@
         stockRate = stockData.rows[i].cells.item(3).innerHTML;
         stockData.rows[i].cells.item(4).innerHTML = (
           stockQty * stockRate
-        ).toFixed(1);
+        ).toFixed(3);
       }
     </script>
 
     <script>
       $(document).ready(function () {
-        $("#stockDataTable").DataTable();
+        $("#stockDataTable").DataTable({
+          "lengthMenu": [[5, 10, 25, -1], [5, 10, 25, "All"]]
+        });
+        
       });
     </script>
   </body>
