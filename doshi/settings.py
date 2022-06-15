@@ -75,14 +75,23 @@ WSGI_APPLICATION = 'doshi.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
-
+'''
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': 'mydatabase',
     }
 }
-
+'''
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'doshidb',
+        'USER': 'root',
+        'PASSWORD': 'abc123',
+        'HOST': 'localhost'
+    }
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
@@ -146,4 +155,4 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = "587"
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'djangodeveloper09@gmail.com'
-EMAIL_HOST_PASSWORD = 'Django@12345'
+EMAIL_HOST_PASSWORD = 'gljvtlcrrdfemcbw'        # Django@123456

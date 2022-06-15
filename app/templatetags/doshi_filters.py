@@ -7,7 +7,7 @@ register = template.Library()
 def status(value):
     all_status = False
     data = Invoice.objects.filter(invoice_no=value, invoice_item_scanned_status=False)
-    print(data, data.exists())
     if not data.exists():
         all_status = True
     return all_status
+

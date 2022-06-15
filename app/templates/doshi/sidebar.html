@@ -49,19 +49,42 @@ rel="stylesheet"
             <span>SKU Items</span></a>
     </li>
 
-    <!-- Nav Item - Tables -->
+
+    <!-- Nav Item - Charts -->
     <li class="nav-item">
         <a class="nav-link" href="{% url 'invoices' %}">
             <i class="fas fa-fw fa-table"></i>
-            <span>Invoices</span></a>
+            <span>Scan Invoice</span></a>
     </li>
+
+    {% comment %} <!-- Nav Item - Tables -->
+    <li class="nav-item"> 
+            <li class="nav-item ">
+                <a class=" nav-item nav-link">
+            <i class="fas fa-fw fa-table"></i>
+            <span>Invoices</span>
+        </a>
+        <ul style="list-style-type:none;">
+            <li class="nav-item ">
+                <a class="nav-link" href="{% url 'all-invoices' %}">
+                    <i class="fas fa-fw fa-table"></i>
+                    <span>All Invoice Details</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'invoices' %}">
+                    <i class="fas fa-fw fa-table"></i>
+                    <span>Check Invoices</span></a>
+            </li>
+        </ul>
+    </li> 
 
     <!-- Nav Item - Tables -->
     <li class="nav-item">
         <a class="nav-link" href="{% url 'barcodes' %}">
             <i class='fas fa-barcode fa-border fa-3x'></i>
             <span>Generate Barcodes</span></a>
-    </li>
+    </li> {% endcomment %}
 
     <!-- Nav Item - Tables -->
     <li class="nav-item">
@@ -74,10 +97,11 @@ rel="stylesheet"
     <!-- Divider -->
     <hr class="sidebar-divider d-none d-md-block">
 
+{% comment %}     
     <!-- Sidebar Toggler (Sidebar) -->
     <div class="text-center d-none d-md-inline">
         <button class="rounded-circle border-0" id="sidebarToggle"></button>
-    </div>
+    </div> {% endcomment %}
 
     
 </ul>

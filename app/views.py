@@ -21,6 +21,8 @@ import csv
 def index(request):
     if 'id' in request.session:
         user_list = User.objects.all()
+        if  SKUItems.objects.filter(sku_serial_no = None).exists():
+            GenerateBRCode().start()
         return render(request, 'doshi/index.html', {'user' : user_list})
     else:
         return redirect('login')
@@ -105,7 +107,7 @@ def forgot_password(request):
                 request.session['email'] = email
                 body = f"Please use the verification code below on the Doshi website: \n Your otp is {otp} \n If you didn't request this, you can ignore this email or let us know."
                 EmailThread('OTP Verification', body, email).start()
-            messages.success(request, "OTP sent successfully on this email id...")
+            messages.success(request, "OTP sent successfully on this email id")
             return render(request, 'doshi/verify-otp.html', {'otp': otp, 'email': email})
         except Exception as e:
             messages.error(request, 'User does not exists ')
@@ -138,16 +140,24 @@ def verify_otp(request):
 
 def reset_password(request):
     if request.method == 'POST':
-        try:
-            password = request.POST['ResetPassword']
+            password = request.POST['newPassword']
+            print(password)
             get_user = User.objects.get(email=request.session['email'])
             get_user.password = password
             get_user.save()
             del request.session['r-p']
             return redirect('login')
-        except Exception as e:
-            messages.error(request, e)
-            return redirect('reset-password')
+        # try:
+        #     password = request.POST['ResetPassword']
+        #     print(password)
+        #     get_user = User.objects.get(email=request.session['email'])
+        #     get_user.password = password
+        #     get_user.save()
+        #     del request.session['r-p']
+        #     return redirect('login')
+        # except Exception as e:
+        #     messages.error(request, e)
+        #     return redirect('reset-password')
 
     if 'r-p' in request.session:
         return render(request, 'doshi/reset-password.html')
@@ -156,42 +166,72 @@ def reset_password(request):
 
 
 def sku_items(request):
+    try:
+        if 'id' in request.session:
+            sku_list = SKUItems.objects.exclude(sku_serial_no = None).filter(sku_status=1)
+            
+            # generate barcode if not exists
+            generate_barcode_list = SKUItems.objects.filter(sku_serial_no = None)
+            if  generate_barcode_list.exists():
+                for sku in generate_barcode_list:
+                    sno, filename = generate_barcode()
+                    sku.sku_serial_no = sno
+                    sku.sku_barcode_image = os.path.join('barcode/', filename)
+                    sku.save() 
+
+                # GenerateBRCode().start()
+            zipBarcodes()
+            return render(request,'doshi/sku-list.html', {'sku_list': sku_list})
+        return redirect('login')
+    except Exception as e:
+        print(e)
+        return redirect('index')
+
+
+def all_invoices(request):
     if 'id' in request.session:
-        sku_list = SKUItems.objects.exclude(sku_serial_no = None)
-        return render(request,'doshi/sku-list.html', {'sku_list': sku_list})
+        invoices = Invoice.objects.all().values('invoice_no', 'invoice_party_name', 'invoice_date', 'invoice_total_amount').distinct()
+        return render(request, 'doshi/all-invoices.html', {'invoices': invoices})
 
     return redirect('login')
-
+        
 
 def invoices(request):
     if 'id' in request.session:
-        invoices = Invoice.objects.all().values('invoice_no', 'invoice_party_name', 'invoice_date', 'invoice_total_amount').distinct()
+        invoices = Invoice.objects.filter(invoice_item_scanned_status=False).values('invoice_no', 'invoice_party_name', 'invoice_date', 'invoice_total_amount').distinct()
         return render(request, 'doshi/invoices.html', {'invoices': invoices})
 
     return redirect('login')
-    
 
-def barcodes(request):
-    if request.method == 'POST':
-        try:
-            sku_id = request.POST['sku_id']
-            get_sku = SKUItems.objects.filter(pk=sku_id, sku_serial_no=None)
-            
-            if get_sku.count() > 0:
-                sno, filename = generate_barcode()
-                get_sku.update(sku_serial_no = sno, sku_barcode_image = os.path.join('barcode/', filename))
-                
-            else:
-                raise Exception('Unable to generate barcode ')
-        except Exception as e:
-            messages.error(request, e)
-            return redirect('barcodes')
-        
+
+def invoice_details(request, invoice_no):
     if 'id' in request.session:
-        sku_list = SKUItems.objects.filter(sku_serial_no=None)
-        return render(request,'doshi/barcodes.html', {'sku_list': sku_list})
+        invoice_sku_list = Invoice.objects.filter(invoice_no=str(invoice_no))
+        invoice_details = invoice_sku_list[0]
+        return render(request, 'doshi/invoice-details.html', {'invoice_sku_list': invoice_sku_list, 'invoice_details': invoice_details})
 
-    return redirect('login')
+
+# def barcodes(request):
+#     if request.method == 'POST':
+#         try:
+#             sku_id = request.POST['sku_id']
+#             get_sku = SKUItems.objects.filter(pk=sku_id, sku_serial_no=None)
+            
+#             if get_sku.count() > 0:
+#                 sno, filename = generate_barcode()
+#                 get_sku.update(sku_serial_no = sno, sku_barcode_image = os.path.join('barcode/', filename))
+                
+#             else:
+#                 raise Exception('Unable to generate barcode ')
+#         except Exception as e:
+#             messages.error(request, e)
+#             return redirect('barcodes')
+        
+#     if 'id' in request.session:
+#         sku_list = SKUItems.objects.filter(sku_serial_no=None)
+#         return render(request,'doshi/barcodes.html', {'sku_list': sku_list})
+
+#     return redirect('login')
 
 
 def bypassProducts(request):
@@ -204,36 +244,13 @@ def bypassProducts(request):
         
 
 def invoice_verify(request, invoice_no):  
-    invoice_sku_list = Invoice.objects.filter(invoice_no=str(invoice_no), invoice_item_scanned_status=False)
+    invoice_sku_list = Invoice.objects.filter(invoice_no=str(invoice_no)).order_by('invoice_item_scanned_status')
     invoice_barcode_list = [i.invoice_item.sku_serial_no for i in invoice_sku_list]
     request.session['invoice_barcode_list'] = invoice_barcode_list
     
-    try:
-        if request.method == 'POST':
-            barcode_no = request.POST['barcodeInput']
-
-            sku = SKUItems.objects.filter(sku_serial_no=barcode_no)
-            if sku.count() > 0:
-                invoice_obj = invoice_sku_list.filter(invoice_item=sku[0])
-                if invoice_obj.count() > 0:
-                    invoice_obj.update(invoice_item_scanned_status=True)
-                    invoice_sku_list = Invoice.objects.filter(invoice_no=str(invoice_no), invoice_item_scanned_status=False)
-                    return JsonResponse({
-                        'data': 'success'
-                    })
-                else:
-
-                    raise Exception('hello world')
-            else:
-                raise Exception('Barcode does not exists please check SKU list and generate the barcode')
-            
-    except Exception as e:
-        messages.error(request, e)
-        return HttpResponseRedirect(reverse('invoice-verify', args=(invoice_no,)))
-
-
-    if 'id' in request.session:
+    if 'id' in request.session and invoice_sku_list.count() > 0:
         return render(request, 'doshi/invoice-verify.html', {'invoice_sku_list': invoice_sku_list, 'invoice_no': invoice_no})
+    return redirect('invoices')
 
 
 def verifyInvoice(request):
@@ -241,43 +258,62 @@ def verifyInvoice(request):
     if request.method == "POST":
 
         try:
+            invoice_no = request.POST['invoice']
             # check in all sku list whether barcode exists or not --> returns and sku objecct
             get_sku = SKUItems.objects.get(sku_serial_no=request.POST['barcode'])
-
+            
             # Get invoice sku queryset
-            get_invoice = Invoice.objects.filter(invoice_no=request.POST['invoice']).values('invoice_item__sku_name')
+            get_invoice = Invoice.objects.filter(invoice_no=invoice_no, invoice_item_scanned_status=False).values('invoice_item__sku_name', 'invoice_item__sku_expiry_date', 'invoice_item_total_scan', 'invoice_item_qty', 'invoice_item_scanned_status')
 
-            # convert above queryset to  list
-            get_sku_list = [i['invoice_item__sku_name'] for i in get_invoice]
-
+            # convert above queryset to  list 
+            get_sku_list = [i['invoice_item__sku_name'] for i in get_invoice ]
+            
             # print("SKU GET : ", get_sku.sku_name)     BALL BEARING COK UC 206
 
             # print("GET SKU LIST : ", get_sku_list)       ['BALL BEARING COK UC 206', 'BALL BEARING COK UC 205']
            
             # print("get invoice -> ", get_invoice)   <QuerySet [{'invoice_item__sku_name': 'BALL BEARING COK UC 206'}, {'invoice_item__sku_name': 'BALL BEARING COK UC 205'}]>
+            
+            if (get_sku.sku_name in get_sku_list):
+                get_invoice_item = get_invoice.filter(invoice_item=get_sku)
+                
+                if get_invoice_item[0]['invoice_item__sku_expiry_date'] < date.today():
+                    raise Exception('SKU Expired')
+                else:
+                    if not get_invoice_item[0]['invoice_item_scanned_status']:
+                        get_invoice_item.update(invoice_item_total_scan=F('invoice_item_total_scan') + 1)
+                        if get_invoice_item[0]['invoice_item_total_scan'] == get_invoice_item[0]['invoice_item_qty']:
+                            print(get_invoice_item)
+                            Invoice.objects.filter(invoice_item__sku_name=get_sku.sku_name).update(invoice_item_scanned_status=True)
+                    else:
+                        raise Exception('SKU Scanned already')
+                
+                
+                # sku_qty_invoice =  Invoice.objects.filter(invoice_no=invoice_no, invoice_item=get_sku)[0].invoice_item_qty
 
-            if get_sku.sku_name == request.POST['check-sku']:
-                Invoice.objects.filter(invoice_item__sku_name=get_sku.sku_name).update(invoice_item_scanned_status=True)
+                get_sku.sku_qty -= 1
+                get_sku.save()
+
                 return JsonResponse({
                     "status": "success",
                     "msg": "SKU mapped"
                 })
 
-            elif get_sku.sku_name in get_sku_list:
-
-                return JsonResponse({
-                    "status": "error",
-                    "msg": "SKU is present in Invoice. Please scan SKU present in first row"
-                    
-                })
-
             else:
-                return JsonResponse({
-                    "status": "warning",
-                    "msg": "Do you want to continue with this product ?",
-                    "sku-name": get_sku.sku_name
-                    
-                })
+                if get_sku_list:
+                    return JsonResponse({
+                        "status": "warning",
+                        "msg": "Do you want to continue with this product ?",
+                        "sku-name": get_sku.sku_name
+                    })
+                else:
+                    raise Exception("SKUs already scanned")
+
+        except SKUItems.DoesNotExist:
+            return JsonResponse({
+                "status": "error",
+                "msg": "Barcode does not exist"
+            })
 
         except Exception as ep:
 
@@ -285,7 +321,7 @@ def verifyInvoice(request):
 
             return JsonResponse({
                 "status": "error",
-                "msg": "SKU is not registered or might be barcode not generated for given SKU."
+                "msg": str(ep)
             })
 
     return redirect('invoices')
@@ -298,27 +334,36 @@ def bypassInvoice(request):
             invoice_no = request.POST['invoice']
             sku_name = request.POST['sku_name']
             sku_against_name = request.POST['sku_against_name']
-            date = request.POST['date']
-            time = request.POST['time']
             
-            invoice_obj = Invoice.objects.filter(invoice_no=invoice_no)
-            print("Invoice obj -> ",invoice_obj)
-            sku_name_obj = SKUItems.objects.get(sku_name=sku_name)
-            print("SKU_obj -> ", sku_name_obj)
             sku_against_name_obj = SKUItems.objects.get(sku_name=sku_against_name)
-            print("SKU_------->  ", sku_against_name_obj)
-            # date = datetime.strptime("%m/%d/%Y", date)
-            # time = datetime.strptime("%H:%M:%S %p", time)
 
-            Invoice.objects.filter(invoice_item__sku_name=sku_against_name_obj.sku_name).update(invoice_item_scanned_status=True)
+            sku_name_obj = SKUItems.objects.get(sku_name=sku_name)
+
+            invoice_obj = Invoice.objects.filter(invoice_no=invoice_no, invoice_item=sku_against_name_obj)
+
+            if not invoice_obj[0].invoice_item_scanned_status:
+                invoice_obj.update(invoice_item_total_scan = F('invoice_item_total_scan') + 1)
+                if invoice_obj[0].invoice_item_total_scan == invoice_obj[0].invoice_item_qty:
+                    Invoice.objects.filter(invoice_no=invoice_no, invoice_item=sku_against_name_obj).update(invoice_item_scanned_status=True)
+                    
+                    # ByPassModel.objects.create(bypass_invoice_no=invoice_obj[0], bypass_sku_name=sku_name_obj, bypass_against_sku_name=sku_against_name_obj)
+            else:
+                raise Exception('SKU Scanned already')
+            
+            
+            # sku_against_name_obj.save()
+            print(sku_name_obj.sku_qty)
+            sku_name_obj.sku_qty -= 1
+            sku_name_obj.save()
             ByPassModel.objects.create(bypass_invoice_no=invoice_obj[0], bypass_sku_name=sku_name_obj, bypass_against_sku_name=sku_against_name_obj)
-
+            
             return JsonResponse({
                 "status": "success",
                 "msg": "record added"
             })
 
         except Exception as e:
+            print(e)
             return JsonResponse({
                 "status": "error",
                 "msg": "record not added",
@@ -330,37 +375,14 @@ def bypassInvoice(request):
 
 def generate_csv(request):
     response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = 'attachment; filename="Bypass_file.csv"'
+    response['Content-Disposition'] = 'attachment; filename="BypassData.csv"'
 
     writer = csv.writer(response)
-    writer.writerow(['Invoice_no', 'Bypass SKU Name', 'Bypass Against SKU Name', 'Bypass Datetime'])
+    writer.writerow(['Invoice_no', 'Bypass SKU Name', 'Bypass Against SKU Name', 'Bypass SKU Quantity', 'Bypass Datetime'])
     
-    users = ByPassModel.objects.all().values_list('bypass_invoice_no__invoice_no', 'bypass_sku_name__sku_name', 'bypass_against_sku_name__sku_name', 'bypass_datetime')
-    
+    users = ByPassModel.objects.all().values_list('bypass_invoice_no__invoice_no', 'bypass_sku_name__sku_name',  'bypass_against_sku_name__sku_name', 'bypass_against_sku_name__sku_qty', 'bypass_datetime')
+    print(users)
     for user in users:
         writer.writerow(user)
     
     return response
-
-
-'''
-def send_generate_csv(request):
-    
-    with open('Bypass_file.csv', mode='w') as employee_file:
-        writer = csv.writer(employee_file)
-        writer.writerow(['Invoice_no', 'Bypass SKU Quantity', 'Bypass SKU Name', 'Bypass Against SKU Name', 'Bypass Datetime'])
-
-        users = ByPassModel.objects.all().values_list('bypass_invoice_no__invoice_no', 'bypass_sku_name__sku_qty', 'bypass_sku_name__sku_name', 'bypass_against_sku_name__sku_name', 'bypass_datetime')
-
-        for user in users:
-            writer.writerow(user)
-
-    user_email = User.objects.filter(pk=request.session['id'])[0].email
-    
-    EmailThread('Bypass SKU List CSV data', 'CSV file for Bypass SKU Items', user_email, attachments='Bypass_file.csv').start()
-    get_bypass_list = ByPassModel.objects.all()
-    messages.success(request, 'File sent to an email successfully.')
-    return render(request, 'doshi/bypass-products.html', {'bypass_list':get_bypass_list })
-'''
-        
-

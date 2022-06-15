@@ -36,7 +36,7 @@
       rel="stylesheet"
     />
   </head>
-id
+
   <body id="page-top">
     <!-- Page Wrapper -->
     <div id="wrapper">
@@ -95,9 +95,10 @@ id
                   <table
                     class="table table-bordered table-hover table-hover-primary"
                     width="100%"
+                    id="invoiceVerifyDataTable"
                     cellspacing="0"
                   >
-                    <thead>
+                    <thead class="thead-dark">
                       <tr>
                         <th>Sr.No.</th>
                         <th>SKU Name</th>
@@ -105,7 +106,7 @@ id
                         <th>SKU Item Rate</th>
                         <th>SKU Item Amount</th>
                         <th>Barcode</th>
-                        
+                        <th>Status</th>
                       </tr>
                     </thead>
 
@@ -114,25 +115,24 @@ id
                       <tr>
                         <td>{{ forloop.counter }}</td>
                         <td id="1">{{ stk.invoice_item }}</td>
-                        <td>{{ stk.invoice_item_qty }}</td>
+                        <td>{{ stk.invoice_item_total_scan }} / {{ stk.invoice_item_qty }}</td>
                         <td>{{ stk.invoice_item_rate }}</td>
                         <td>{{ stk.invoice_item_amount }}</td>
                         <td>{{ stk.invoice_item.sku_serial_no }}</td>
-                        {% comment %}
-                        {% if stk.invoice_item_scanned_status == True %}
+                        {% if stk.invoice_item_scanned_status %}
                         <td>
                           <h5>
-                            <span class="badge badge-success">Completed</span>
+                            <span class="badge rounded-pill badge-success">Completed</span>
                           </h5>
                         </td>
                         {% else %}
                         <td>
                           <h5>
-                            <span class="badge badge-danger">Pending</span>
+                            <span class="badge rounded-pill badge-danger">Pending</span>
                           </h5>
                         </td>
                         {% endif %}
-                        {% endcomment %}
+                        
                       </tr>
                       {% endfor %}
                     </tbody>
@@ -146,14 +146,8 @@ id
         <!-- End of Main Content -->
 
         <!-- Footer -->
-        <footer class="sticky-footer bg-white">
-          <div class="container my-auto">
-            <div class="copyright text-center my-auto">
-              <span>Copyright &copy; Your Website 2020</span>
-            </div>
-          </div>
-        </footer>
-        <!-- End of Footer -->
+        {% include 'doshi/footer.html' %}
+
       </div>
       <!-- End of Content Wrapper -->
     </div>
@@ -179,6 +173,11 @@ id
         <div class="modal-body">
 
             <form method="post" action="{% url 'bypass-invoice' %}">
+              <div class="form-group row">
+                <div class="col-sm-10">
+                <h4>Do you want to continue ?</h4>
+                </div>
+              </div>
                 
                 {% csrf_token %}
                 <div class="form-group row">
@@ -206,7 +205,7 @@ id
         <!-- Modal footer -->
         <div class="modal-footer">
           <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
-          <button type="submit" class="btn btn-primary"  data-dismiss="modal" id="byPassDataBtn">Proceed</button>
+          <button type="submit" class="btn btn-primary"  data-dismiss="modal" id="byPassDataBtn">Continue</button>
         </div>
         
       </div>
@@ -241,27 +240,33 @@ id
 
 
     <script>
-      $(document).ready(function () {
-        $("#barcodeInput").on("keyup", function (e) {
+      $(document).ready(function (val) {
+        $('#barcodeInput').focus();
+        $("#barcodeInput").on("input", function (e) {
           //Fetch form to apply custom Bootstrap validation
           $('#barcodeInput').removeClass('is-invalid');
           $('#validationServer03Feedback').html('Please enter valid 13 digit barcode number');
+          $('#error-alert').remove();
+
+          
           var form = $("#needs-validation");
 
           // post data for server
           var check_sku = $("#1").text();
-          var barcode_no = $(this).val();
+          var barcode_no = $(this).val().trim();
           var invoice_no = $("#invoice-no").val();
+
 
           if (!form[0].checkValidity()) {
             e.preventDefault();
             e.stopPropagation();
             console.log('Not going anywhere....')
           }
-          else if($("#stockDataTable tr").length == 0)
+          //console.log({{ invoice_sku_list|length }});
+          else if({{ invoice_sku_list|length }} == 0)
           {
             
-            var alert_element = '<div class=" m-3 alert alert-danger alert-dismissible fade show" role="alert"> <strong>Cannot proceed with empty table</strong><button type="button" class="close" data-dismiss="alert" aria-label="Close"> <span aria-hidden="true">&times;</span></button></div>';
+            var alert_element = '<div class=" m-4 alert alert-danger alert-dismissible fade show" role="alert"> <strong>Cannot proceed with empty table</strong><button type="button" class="close" data-dismiss="alert" id="close-alert" aria-label="Close"> <span aria-hidden="true">&times;</span></button></div>';
             
             $(".container-fluid").before(alert_element);
             e.preventDefault();
@@ -294,15 +299,16 @@ id
                 else
                 {
                   const error_message = val['msg'];
-                  var alert_element = `<div class=" m-3 alert alert-danger alert-dismissible fade show" role="alert"> <strong>${error_message}</strong><button type="button" class="close" data-dismiss="alert" aria-label="Close"> <span aria-hidden="true">&times;</span></button></div>`;
+                  //alert(val['msg'])
+                  var alert_element = `<div class=" m-3 alert alert-danger alert-dismissible fade show" id="error-alert" role="alert"> <strong>${error_message}</strong><button type="button" class="close" data-dismiss="alert" aria-label="Close"> <span aria-hidden="true">&times;</span></button></div>`;
                   $(".container-fluid").before(alert_element);
-                  // $('#barcodeInput').addClass('is-invalid');
-                  // $('#validationServer03Feedback').html(val['msg']);
+                  
                 }
               },
             });
           }
           form.addClass("was-validated");
+          
         });
       });
     </script>
@@ -314,10 +320,7 @@ id
             var invoice_no = $("#invoice-no").val();
             var sku_name = $("#sku-name").val();
             var sku_against_name = $("#sku-against-name").val();
-            const dt = new Date();
-            let date = dt.toLocaleDateString();
-            let time = dt.toLocaleTimeString();
-
+            
             $.ajax({
                 type: "POST",
                 url: "{% url 'bypass-invoice' %}",
@@ -326,18 +329,17 @@ id
                     "invoice": invoice_no,
                     "sku_name": sku_name,
                     "sku_against_name": sku_against_name,
-                    "date": date,
-                    "time": time,
                     "csrfmiddlewaretoken": $("input[name=csrfmiddlewaretoken]").val(),
 
                 },
                 success: function(val){
+                    // console.log(val);
                     location.reload();
                 }
-            })
-            
+            })    
         })
     </script>
 
+    
   </body>
 </html>

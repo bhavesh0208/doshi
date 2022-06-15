@@ -9,7 +9,8 @@ import os
 from django.core.mail import EmailMessage
 from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime
-
+from zipfile import ZipFile
+import pathlib
 
 class EmailThread(Thread):
     def __init__(self, subject, body, email, attachments = None):
@@ -22,14 +23,33 @@ class EmailThread(Thread):
     def run(self):
         from_email = "djangodeveloper09@gmail.com"
         to = self.email
-        e = EmailMessage(self.subject, self.body, from_email, to)
+        
+        if isinstance(to, str):
+            e = EmailMessage(self.subject, self.body, from_email, [to])
+        else:
+            e = EmailMessage(self.subject, self.body, from_email, to)
         
         if self.attachments is not None:
             e.attach_file(self.attachments)
         e.send()
 
 
-def generate_barcode():
+class GenerateBRCode(Thread):
+    def __init__(self):
+        Thread.__init__(self)
+    
+    def run(self):
+        sku_list = SKUItems.objects.filter(sku_serial_no = None)
+        
+        if sku_list.exists():
+            for sku in sku_list:
+                sno, filename = generate_barcode()
+                sku.sku_serial_no = sno
+                sku.sku_barcode_image = os.path.join('barcode/', filename)
+                sku.save()
+
+
+def generate_barcode(sno=None):
     sno = EAN13(str(randint(100000000000, 999999999999)), writer=ImageWriter())
     
     if SKUItems.objects.filter(sku_serial_no=sno).count() > 0:
@@ -44,11 +64,23 @@ def generate_barcode():
         return (sno.ean, filename)
 
 
+def zipBarcodes():
+    """Returns the zip file path """
+
+    #  calling function to get all file paths in the directory
+    sku_file_paths = SKUItems.objects.all().values_list('sku_barcode_image', flat=True)
+
+    with ZipFile('./media/AllBarcodes.zip','w') as archive:
+        print(archive.namelist()) 
+        for image in sku_file_paths:
+            archive.write(os.path.join(settings.MEDIA_ROOT, image), arcname=os.path.basename(image))
+        print(archive.namelist())
+
 def sendEmailReport():
     """ send email to every user in database """
 
     user_email = User.objects.values('email')
-    user_email_list = [i['email'] for i in user_email]
+    user_email_list = [i.get('email') for i in user_email]
 
     today_date = datetime.today().strftime('%Y-%m-%d')
     bypass_sku_data = ByPassModel.objects.all().filter(bypass_datetime__date = today_date)
@@ -59,7 +91,7 @@ def sendEmailReport():
             with open('Bypass_file.csv', mode='w') as employee_file:
                 import csv
                 writer = csv.writer(employee_file)
-                writer.writerow(['Invoice_no', 'Bypass SKU Quantity', 'Bypass SKU Name', 'Bypass Against SKU Name', 'Bypass Datetime'])
+                writer.writerow(['Invoice No', 'Bypass SKU Quantity', 'Bypass SKU Name', 'Bypass Against SKU Name', 'Bypass Datetime'])
 
                 users = ByPassModel.objects.all().values_list('bypass_invoice_no__invoice_no', 'bypass_sku_name__sku_qty', 'bypass_sku_name__sku_name', 'bypass_against_sku_name__sku_name', 'bypass_datetime')
 
@@ -79,7 +111,7 @@ def startSchedular():
     """Create a BackgroundScheduler, and set the daemon parameter to True. This allows us to kill the thread when we exit the DJANGO application."""
     try:
         schedular = BackgroundScheduler(deamon=True)
-        schedular.add_job(sendEmailReport, 'cron', hour=15, minute=11)
+        schedular.add_job(sendEmailReport, 'cron', hour=18, minute=0)
         schedular.start()
     except Exception as e:
         print('schedular shutdown successfully')

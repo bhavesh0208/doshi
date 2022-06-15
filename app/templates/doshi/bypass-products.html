@@ -52,7 +52,7 @@
           <div class="container-fluid">
             <!-- Page Heading -->
             <div class="container-fluid">
-              <!-- Page Heading -->
+              
               <div
                 class="d-sm-flex align-items-center justify-content-between mb-4"
               >
@@ -67,8 +67,10 @@
 
             <!-- DataTales Example -->
             <div class="card shadow mb-4">
-              <div class="card-header py-3">
-                
+              <div class="card-header py-3 text-primary">
+                <h6 class="m-0 font-weight-bold text-primary">
+                  Bypass SKU List
+                </h6>
               </div>
               <div class="card-body">
                 <div class="table-responsive">
@@ -78,13 +80,15 @@
                       cellspacing="0"
                       id="bypassDataTable"
                     >
-                      <thead>
+                      <thead class="thead-dark">
                         <tr>
                           <th>Sr.No.</th>
                           <th>Invoice No</th>
                           <th>SKU Name</th>
                           <th>Bypass Against SKU</th>
-                          <th>DateTime</th>
+                          <th>SKU Quantity</th>
+                          <th>Date</th>
+                          <th>Time</th>
                         </tr>
                       </thead>
   
@@ -95,7 +99,9 @@
                           <td id="1">{{ bl.bypass_invoice_no.invoice_no }}</td>
                           <td>{{ bl.bypass_sku_name.sku_name }}</td>
                           <td>{{ bl.bypass_against_sku_name }}</td>
-                          <td>{{ bl.bypass_datetime }}</td>
+                          <td>{{ bl.bypass_against_sku_name.sku_qty }}</td>
+                          <td>{{ bl.bypass_datetime | date }}</td>
+                          <td>{{ bl.bypass_datetime | time:"TIME_FORMAT" }}</td>
                           
                         </tr>
                         {% endfor %}
@@ -109,19 +115,13 @@
         </div>
         <!-- End of Main Content -->
 
-        <!-- Footer -->
-        <footer class="sticky-footer bg-white">
-          <div class="container my-auto">
-            <div class="copyright text-center my-auto">
-              <span>Copyright &copy; Your Website 2020</span>
-            </div>
-          </div>
-        </footer>
-        <!-- End of Footer -->
-      </div>
       <!-- End of Content Wrapper -->
     </div>
     <!-- End of Page Wrapper -->
+     <!-- Footer -->
+     {% include 'doshi/footer.html' %}
+
+
 
     <!-- Scroll to Top Button-->
     <a class="scroll-to-top rounded" href="#page-top">

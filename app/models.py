@@ -24,6 +24,8 @@ class SKUItems(Model):
     sku_rate = FloatField(default=0.0)
     sku_serial_no = CharField(default="", max_length=200, unique=True, blank=True, null=True)
     sku_barcode_image = ImageField(upload_to='barcode/', default='backup/')
+    sku_status = BooleanField(default=True) # True for Active and False for Inactive
+    sku_expiry_date = DateField(default=date.today())
 
     def __str__(self):
         return self.sku_name
@@ -34,13 +36,17 @@ class Invoice(Model):
     invoice_party_name = CharField(max_length=200, default="")
     invoice_sales_ledger = CharField(max_length=200, default="")
     invoice_date = DateField(auto_now_add=True)
-    invoice_item = ForeignKey(SKUItems, on_delete=CASCADE, default=None, blank=True)
-    invoice_item_qty = IntegerField(default=0.0)
+    invoice_item = ForeignKey(SKUItems, on_delete=SET_NULL, default=None, blank=True, null=True)
+    invoice_item_qty = IntegerField(default=0)
     invoice_item_rate = FloatField(default=0.0)
     invoice_item_amount = FloatField(default=0.0)
+    invoice_item_total_scan = IntegerField(default=0.0)
     invoice_total_qty = IntegerField(default=0)
     invoice_total_amount = FloatField(default=0.0)
     invoice_item_scanned_status = BooleanField(default=False)
+
+    class Meta:
+        unique_together = ('invoice_no', 'invoice_item')
     
 
     def __str__(self):
