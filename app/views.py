@@ -21,6 +21,8 @@ import csv
 def index(request):
     if 'id' in request.session:
         total_bypass = ByPassModel.objects.all().filter(bypass_datetime__contains=date.today()).count()
+        total_sku = SKUItems.objects.all().count()
+        
         if  SKUItems.objects.filter(sku_serial_no = None).exists():
             GenerateBRCode().start()
         return render(request, 'doshi/index.html', {'total_bypass': total_bypass})
