@@ -17,6 +17,13 @@ class User(Model):
     def __str__(self):
         return self.name
 
+class Company(Model):
+    company_name =  CharField(max_length=70, default="", unique=True)
+    company_address = CharField(max_length=70, default="")
+    company_contact = CharField(max_length=10, default="")
+    company_formal_name = CharField(max_length=70, default="")
+    # comapny_starting_from = DateField()
+
 
 class SKUItems(Model):
     sku_name = CharField(max_length=100, unique=True, default="")
@@ -25,7 +32,7 @@ class SKUItems(Model):
     sku_serial_no = CharField(default="", max_length=200, unique=True, blank=True, null=True)
     sku_barcode_image = ImageField(upload_to='barcode/', default='backup/')
     sku_status = BooleanField(default=True) # True for Active and False for Inactive
-    sku_expiry_date = DateField(default=date.today())
+    # sku_expiry_date = DateField(default=date.today())
 
     def __str__(self):
         return self.sku_name

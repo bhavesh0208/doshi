@@ -69,7 +69,7 @@ def zipBarcodes():
 
     #  calling function to get all file paths in the directory
     sku_file_paths = SKUItems.objects.all().values_list('sku_barcode_image', flat=True)
-
+    
     with ZipFile('./media/AllBarcodes.zip','w') as archive:
         print(archive.namelist()) 
         for image in sku_file_paths:
@@ -83,7 +83,7 @@ def sendEmailReport():
     user_email_list = [i.get('email') for i in user_email]
 
     today_date = datetime.today().strftime('%Y-%m-%d')
-    bypass_sku_data = ByPassModel.objects.all().filter(bypass_datetime__date = today_date)
+    bypass_sku_data = ByPassModel.objects.all().filter(bypass_datetime__contains = today_date)
     
     try:
 
@@ -111,7 +111,7 @@ def startSchedular():
     """Create a BackgroundScheduler, and set the daemon parameter to True. This allows us to kill the thread when we exit the DJANGO application."""
     try:
         schedular = BackgroundScheduler(deamon=True)
-        schedular.add_job(sendEmailReport, 'cron', hour=18, minute=0)
+        schedular.add_job(sendEmailReport, 'cron', hour=19, minute=30)
         schedular.start()
     except Exception as e:
         print('schedular shutdown successfully')
