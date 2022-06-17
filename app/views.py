@@ -12,7 +12,7 @@ from django.core.validators import validate_email
 from django.conf import settings
 from .utils import *
 from django.urls import reverse
-from datetime import datetime, date
+from datetime import datetime
 import csv
 
 
@@ -20,12 +20,10 @@ import csv
 
 def index(request):
     if 'id' in request.session:
-        total_bypass = ByPassModel.objects.all().filter(bypass_datetime__contains=date.today()).count()
-        total_sku = SKUItems.objects.all().count()
-        
+        user_list = User.objects.all()
         if  SKUItems.objects.filter(sku_serial_no = None).exists():
             GenerateBRCode().start()
-        return render(request, 'doshi/index.html', {'total_bypass': total_bypass})
+        return render(request, 'doshi/index.html', {'user' : user_list})
     else:
         return redirect('login')
         
@@ -174,8 +172,14 @@ def sku_items(request):
             
             # generate barcode if not exists
             generate_barcode_list = SKUItems.objects.filter(sku_serial_no = None)
-            if  SKUItems.objects.filter(sku_serial_no = None).exists():
-                GenerateBRCode().start()
+            if  generate_barcode_list.exists():
+                for sku in generate_barcode_list:
+                    sno, filename = generate_barcode()
+                    sku.sku_serial_no = sno
+                    sku.sku_barcode_image = os.path.join('barcode/', filename)
+                    sku.save() 
+
+                # GenerateBRCode().start()
             zipBarcodes()
             return render(request,'doshi/sku-list.html', {'sku_list': sku_list})
         return redirect('login')
@@ -259,7 +263,7 @@ def verifyInvoice(request):
             get_sku = SKUItems.objects.get(sku_serial_no=request.POST['barcode'])
             
             # Get invoice sku queryset
-            get_invoice = Invoice.objects.filter(invoice_no=invoice_no, invoice_item_scanned_status=False).values('invoice_item__sku_name', 'invoice_item_total_scan', 'invoice_item_qty', 'invoice_item_scanned_status')
+            get_invoice = Invoice.objects.filter(invoice_no=invoice_no, invoice_item_scanned_status=False).values('invoice_item__sku_name', 'invoice_item__sku_expiry_date', 'invoice_item_total_scan', 'invoice_item_qty', 'invoice_item_scanned_status')
 
             # convert above queryset to  list 
             get_sku_list = [i['invoice_item__sku_name'] for i in get_invoice ]
@@ -269,26 +273,26 @@ def verifyInvoice(request):
             # print("GET SKU LIST : ", get_sku_list)       ['BALL BEARING COK UC 206', 'BALL BEARING COK UC 205']
            
             # print("get invoice -> ", get_invoice)   <QuerySet [{'invoice_item__sku_name': 'BALL BEARING COK UC 206'}, {'invoice_item__sku_name': 'BALL BEARING COK UC 205'}]>
-            # print(get_sku.sku_name in get_sku_list)
+            
             if (get_sku.sku_name in get_sku_list):
                 get_invoice_item = get_invoice.filter(invoice_item=get_sku)
                 
-                
-                if not get_invoice_item[0]['invoice_item_scanned_status']:
-                    get_invoice_item.update(invoice_item_total_scan=F('invoice_item_total_scan') + 1)
-                    print("total_scan  -> ",get_invoice_item[0]['invoice_item_total_scan'])
-                    print("Qty -> ", get_invoice_item[0]['invoice_item_qty'])
-                    if get_invoice_item[0]['invoice_item_total_scan'] == get_invoice_item[0]['invoice_item_qty']:
-                        Invoice.objects.filter(invoice_item__sku_name=get_sku.sku_name).update(invoice_item_scanned_status=True)
-                    
+                if get_invoice_item[0]['invoice_item__sku_expiry_date'] < date.today():
+                    raise Exception('SKU Expired')
+                else:
+                    if not get_invoice_item[0]['invoice_item_scanned_status']:
+                        get_invoice_item.update(invoice_item_total_scan=F('invoice_item_total_scan') + 1)
+                        if get_invoice_item[0]['invoice_item_total_scan'] == get_invoice_item[0]['invoice_item_qty']:
+                            print(get_invoice_item)
+                            Invoice.objects.filter(invoice_item__sku_name=get_sku.sku_name).update(invoice_item_scanned_status=True)
+                    else:
+                        raise Exception('SKU scanning completed')
                 
                 
                 # sku_qty_invoice =  Invoice.objects.filter(invoice_no=invoice_no, invoice_item=get_sku)[0].invoice_item_qty
-                if get_sku.sku_qty > 0:
-                    get_sku.sku_qty -= 1
-                    get_sku.save()
-                else:
-                    raise Exception('SKU Out of Stock')
+
+                get_sku.sku_qty -= 1
+                get_sku.save()
 
                 return JsonResponse({
                     "status": "success",
@@ -308,7 +312,7 @@ def verifyInvoice(request):
         except SKUItems.DoesNotExist:
             return JsonResponse({
                 "status": "error",
-                "msg": "S.K.U. is not present"
+                "msg": "Barcode does not exist"
             })
 
         except Exception as ep:
@@ -331,36 +335,26 @@ def bypassInvoice(request):
             sku_name = request.POST['sku_name']
             sku_against_name = request.POST['sku_against_name']
             
-            
             sku_against_name_obj = SKUItems.objects.get(sku_name=sku_against_name)
 
             sku_name_obj = SKUItems.objects.get(sku_name=sku_name)
 
             invoice_obj = Invoice.objects.filter(invoice_no=invoice_no, invoice_item=sku_against_name_obj)
 
-            if sku_name_obj.sku_qty > 0:
-                sku_name_obj.sku_qty -= 1
-                sku_name_obj.save()
-            else:
-                raise Exception('SKU out of stock')
-
             if not invoice_obj[0].invoice_item_scanned_status:
                 invoice_obj.update(invoice_item_total_scan = F('invoice_item_total_scan') + 1)
                 if invoice_obj[0].invoice_item_total_scan == invoice_obj[0].invoice_item_qty:
                     Invoice.objects.filter(invoice_no=invoice_no, invoice_item=sku_against_name_obj).update(invoice_item_scanned_status=True)
                     
-                # ByPassModel.objects.create(bypass_invoice_no=invoice_obj[0], bypass_sku_name=sku_name_obj, bypass_against_sku_name=sku_against_name_obj)
+                    # ByPassModel.objects.create(bypass_invoice_no=invoice_obj[0], bypass_sku_name=sku_name_obj, bypass_against_sku_name=sku_against_name_obj)
             else:
-                raise Exception('SKU Scanned already')
+                raise Exception('SKU scanning already completed')
             
             
             # sku_against_name_obj.save()
-            # print(sku_name_obj.sku_qty)
-            if sku_name_obj.sku_qty > 0:
-                sku_name_obj.sku_qty -= 1
-                sku_name_obj.save()
-            else:
-                raise Exception('SKU out of stock')
+            print(sku_name_obj.sku_qty)
+            sku_name_obj.sku_qty -= 1
+            sku_name_obj.save()
             ByPassModel.objects.create(bypass_invoice_no=invoice_obj[0], bypass_sku_name=sku_name_obj, bypass_against_sku_name=sku_against_name_obj)
             
             return JsonResponse({
@@ -369,10 +363,10 @@ def bypassInvoice(request):
             })
 
         except Exception as e:
-            # print(e)
+            print(e)
             return JsonResponse({
                 "status": "error",
-                "msg": str(e),
+                "msg": "record not added",
                 "issue": str(e)
             })
     
@@ -384,14 +378,11 @@ def generate_csv(request):
     response['Content-Disposition'] = 'attachment; filename="BypassData.csv"'
 
     writer = csv.writer(response)
-    writer.writerow(['Invoice No', 'Bypass SKU Name', 'Bypass Against SKU Name', 'Bypass SKU Quantity', 'Bypass Datetime'])
+    writer.writerow(['Invoice_no', 'Bypass SKU Name', 'Bypass Against SKU Name', 'Bypass SKU Quantity', 'Bypass Datetime'])
     
-    users = ByPassModel.objects.all().values('bypass_invoice_no__invoice_no', 'bypass_sku_name__sku_name',  'bypass_against_sku_name__sku_name', 'bypass_against_sku_name__sku_qty', 'bypass_datetime')
-    
+    users = ByPassModel.objects.all().values_list('bypass_invoice_no__invoice_no', 'bypass_sku_name__sku_name',  'bypass_against_sku_name__sku_name', 'bypass_against_sku_name__sku_qty', 'bypass_datetime')
+    print(users)
     for user in users:
-        print(user,  user['bypass_datetime'].strftime("%d/%m/%Y %H:%M:%S"))
-        user['bypass_datetime'] = user['bypass_datetime'].strftime("%d/%m/%Y %H:%M:%S")
-        
-        writer.writerow(list(user.values()))
+        writer.writerow(user)
     
     return response
