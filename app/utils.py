@@ -64,6 +64,7 @@ def generate_barcode(sno=None):
         return (sno.ean, filename)
 
 
+## Logic Incomplete @ 
 def zipBarcodes():
     """Returns the zip file path """
 
@@ -71,10 +72,11 @@ def zipBarcodes():
     sku_file_paths = SKUItems.objects.all().values_list('sku_barcode_image', flat=True)
     
     with ZipFile('./media/AllBarcodes.zip','w') as archive:
-        print(archive.namelist()) 
-        for image in sku_file_paths:
-            archive.write(os.path.join(settings.MEDIA_ROOT, image), arcname=os.path.basename(image))
-        print(archive.namelist())
+        for image_path in sku_file_paths:
+            if image_path == "backup/":
+                continue
+            archive.write(os.path.join(settings.MEDIA_ROOT, image_path), arcname=os.path.basename(image_path))
+        # print(archive.namelist())
 
 def sendEmailReport():
     """ send email to every user in database """

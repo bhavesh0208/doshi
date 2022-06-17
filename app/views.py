@@ -14,6 +14,7 @@ from .utils import *
 from django.urls import reverse
 from datetime import datetime
 import csv
+from django.contrib.auth.hashers import make_password, check_password
 
 
 # Create your views here.
@@ -44,7 +45,8 @@ def register(request):
                 if User.objects.filter(contact=contact).count() == 0:
                     try:
                         User(name=name, email=email, contact=contact, password=password).full_clean()
-                        User.objects.create(name=name, email=email, contact=contact, password=password)
+                        encryptedpassword=make_password(password)
+                        User.objects.create(name=name, email=email, contact=contact, password=encryptedpassword)
                         return redirect('login')
                     except ValidationError as e:
                         
@@ -71,13 +73,20 @@ def login(request):
             user = User.objects.get(email=email)
             
             if user:
-                if password == user.password:
-                    msg = "Logged In user " + user.name
-                    request.session['id'] = user.id
-                    request.session['name'] = user.name
-                    return redirect('index')
+                encryptedpassword=make_password(password)
+               
+                checkpassword=check_password(password, user.password)
+                if check_password:
+                    if user.status:
+                        msg = "Logged In user " + user.name
+                        request.session['id'] = user.id
+                        request.session['name'] = user.name
+                        return redirect('index')
+                    else:
+                        messages.error(request, "You are not allowed to access the portal")
+                        return redirect('login')
                 else:
-                    messages.error(request, "Invalid Password ")
+                    messages.error(request, "Invalid Password")
                     return redirect('login')
         except User.DoesNotExist as e:
             msg = "Invalid User"
@@ -101,16 +110,21 @@ def forgot_password(request):
         try:
             email = request.POST['sendOTPEmail']
             get_usr = User.objects.get(email=email)
-            if get_usr:
+            if get_usr.status:
                 otp = randint(1000, 9999)
                 request.session['otp'] = otp
                 request.session['email'] = email
                 body = f"Please use the verification code below on the Doshi website: \n Your otp is {otp} \n If you didn't request this, you can ignore this email or let us know."
                 EmailThread('OTP Verification', body, email).start()
-            messages.success(request, "OTP sent successfully on this email id")
-            return render(request, 'doshi/verify-otp.html', {'otp': otp, 'email': email})
+                messages.success(request, "OTP sent successfully on this email id")
+                return render(request, 'doshi/verify-otp.html', {'otp': otp, 'email': email})
+            else:
+                raise Exception("You are not allowed to access the portal")
+        except User.DoesNotExist:
+            messages.error(request, 'User does not exists') 
+            return redirect('forgot-password')
         except Exception as e:
-            messages.error(request, 'User does not exists ')
+            messages.error(request, e) 
             return redirect('forgot-password')
 
     return render(request, 'doshi/forgot-password.html')
@@ -143,7 +157,8 @@ def reset_password(request):
             password = request.POST['newPassword']
             print(password)
             get_user = User.objects.get(email=request.session['email'])
-            get_user.password = password
+
+            get_user.password = make_password(password)
             get_user.save()
             del request.session['r-p']
             return redirect('login')
@@ -168,7 +183,7 @@ def reset_password(request):
 def sku_items(request):
     try:
         if 'id' in request.session:
-            sku_list = SKUItems.objects.exclude(sku_serial_no = None).filter(sku_status=1)
+            sku_list = SKUItems.objects.exclude(sku_serial_no = None).filter(sku_status=1, sku_qty__gte=10) # remove
             
             # generate barcode if not exists
             generate_barcode_list = SKUItems.objects.filter(sku_serial_no = None)
@@ -245,11 +260,13 @@ def bypassProducts(request):
 
 def invoice_verify(request, invoice_no):  
     invoice_sku_list = Invoice.objects.filter(invoice_no=str(invoice_no)).order_by('invoice_item_scanned_status')
+    invoice_pending_sku_list = Invoice.objects.filter(invoice_no=str(invoice_no), invoice_item_scanned_status=False)
+    print(invoice_pending_sku_list)
     invoice_barcode_list = [i.invoice_item.sku_serial_no for i in invoice_sku_list]
     request.session['invoice_barcode_list'] = invoice_barcode_list
     
     if 'id' in request.session and invoice_sku_list.count() > 0:
-        return render(request, 'doshi/invoice-verify.html', {'invoice_sku_list': invoice_sku_list, 'invoice_no': invoice_no})
+        return render(request, 'doshi/invoice-verify.html', {'invoice_sku_list': invoice_sku_list, 'invoice_no': invoice_no, 'invoice_pending_sku_list': invoice_pending_sku_list})
     return redirect('invoices')
 
 
@@ -296,7 +313,7 @@ def verifyInvoice(request):
 
                 return JsonResponse({
                     "status": "success",
-                    "msg": "SKU mapped"
+                    "msg": "S.K.U. mapped"
                 })
 
             else:
@@ -307,7 +324,7 @@ def verifyInvoice(request):
                         "sku-name": get_sku.sku_name
                     })
                 else:
-                    raise Exception("SKUs already scanned")
+                    raise Exception("S.K.U. scanning already completed")
 
         except SKUItems.DoesNotExist:
             return JsonResponse({
@@ -344,7 +361,7 @@ def bypassInvoice(request):
             if not invoice_obj[0].invoice_item_scanned_status:
                 invoice_obj.update(invoice_item_total_scan = F('invoice_item_total_scan') + 1)
                 if invoice_obj[0].invoice_item_total_scan == invoice_obj[0].invoice_item_qty:
-                    Invoice.objects.filter(invoice_no=invoice_no, invoice_item=sku_against_name_obj).update(invoice_item_scanned_status=True)
+                    Invoice.objects.filter(invoice_no=invoice_no, invoice_item=sku_against_name_obj).update(invoice_item_scanned_status=True, invoice_user=request.session['id'])
                     
                     # ByPassModel.objects.create(bypass_invoice_no=invoice_obj[0], bypass_sku_name=sku_name_obj, bypass_against_sku_name=sku_against_name_obj)
             else:
