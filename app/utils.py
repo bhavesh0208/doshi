@@ -43,9 +43,10 @@ class GenerateBRCode(Thread):
         
         if sku_list.exists():
             for sku in sku_list:
-                sno, filename = generate_barcode()
-                sku.sku_serial_no = sno
-                sku.sku_barcode_image = os.path.join('barcode/', filename)
+                sno = generate_barcode()
+                print(sno)
+                sku.sku_serial_no = sno[0]
+                sku.sku_barcode_image = os.path.join('barcode/', sno[1])
                 sku.save()
 
 
@@ -61,7 +62,7 @@ def generate_barcode(sno=None):
         with open(filepath, "wb") as f:
             EAN13(sno.ean, writer=ImageWriter()).write(f)
         
-        return (sno.ean, filename)
+        return [sno.ean, filename]
 
 
 ## Logic Incomplete @ 

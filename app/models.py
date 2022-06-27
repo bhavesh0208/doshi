@@ -10,7 +10,7 @@ from django.contrib.auth.hashers import make_password
 
 class User(Model):
 
-    ROLES = (('ADMIN', 'Admin'),('EMPLOYEE', 'Employee'))
+    ROLES = (('ADMIN', 'Admin'),('EMPLOYEE', 'Employee'), ('CLIENT','Client'), ('CLIENT_HCH', 'Client_HCH'))
     name = CharField(validators=[validate_name], max_length=70, default="")
     email = EmailField(max_length=70, validators=[validate_email], unique=True, default="")
     contact = CharField(validators=[validate_contact], unique=True, max_length=10, default="")
@@ -34,7 +34,7 @@ class SKUItems(Model):
     sku_name = CharField(max_length=100, unique=True, default="")
     sku_qty = IntegerField(default=0)
     sku_rate = FloatField(default=0.0)
-    sku_serial_no = CharField(default="", max_length=200, unique=True, blank=True, null=True)
+    sku_serial_no = CharField(default="", max_length=200, blank=True, null=True)
     sku_barcode_image = ImageField(upload_to='barcode/', default='backup/')
     sku_status = BooleanField(default=True) # True for Active and False for Inactive
     sku_expiry_date = DateField(default=date.today())
@@ -71,10 +71,10 @@ class ByPassModel(Model):
     bypass_invoice_no = ForeignKey(Invoice, on_delete=CASCADE, default=None, blank=True)
     bypass_sku_name = ForeignKey(SKUItems, on_delete=CASCADE, default=None, blank=True)
     bypass_against_sku_name = ForeignKey(SKUItems, on_delete=CASCADE, default=None, blank=True, related_name='bypass_against_sku_name')
-    bypass_datetime = DateTimeField(auto_now_add=True)
+    bypass_date = DateField(auto_now_add=True)
+    bypass_time = TimeField(auto_now_add=True)
     # bypass_by = ForeignKey(invoice_user, on_delete=SET_NULL, default=None, blank=True)
     
 
     def __str__(self):
         return self.bypass_sku_name.sku_serial_no
-

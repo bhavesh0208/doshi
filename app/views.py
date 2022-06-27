@@ -181,27 +181,23 @@ def reset_password(request):
 
 
 def sku_items(request):
-    try:
-        if 'id' in request.session:
-            sku_list = SKUItems.objects.exclude(sku_serial_no = None).filter(sku_status=1, sku_qty__gte=10) # remove
-            
-            # generate barcode if not exists
-            generate_barcode_list = SKUItems.objects.filter(sku_serial_no = None)
-            if  generate_barcode_list.exists():
-                for sku in generate_barcode_list:
-                    sno, filename = generate_barcode()
-                    sku.sku_serial_no = sno
-                    sku.sku_barcode_image = os.path.join('barcode/', filename)
-                    sku.save() 
+    
+    if 'id' in request.session:
+        sku_list = SKUItems.objects.exclude(sku_serial_no = None).filter(sku_status=1, sku_qty__gte=10) # remove
+        
+        # generate barcode if not exists
+        generate_barcode_list = SKUItems.objects.filter(sku_serial_no = None)
+        # if generate_barcode_list.exists():
+        #     # for sku in generate_barcode_list:
+        #     #     sno, filename = generate_barcode()
+        #     #     sku.sku_serial_no = sno
+        #     #     sku.sku_barcode_image = os.path.join('barcode/', filename)
+        #     #     sku.save()
 
-                # GenerateBRCode().start()
-            zipBarcodes()
-            return render(request,'doshi/sku-list.html', {'sku_list': sku_list})
-        return redirect('login')
-    except Exception as e:
-        print(e)
-        return redirect('index')
-
+        #     GenerateBRCode().start()
+        # zipBarcodes()
+        return render(request,'doshi/sku-list.html', {'sku_list': sku_list})
+    return redirect('login')
 
 def all_invoices(request):
     if 'id' in request.session:
