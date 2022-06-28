@@ -183,18 +183,11 @@ def reset_password(request):
 def sku_items(request):
     try:
         if 'id' in request.session:
-            sku_list = SKUItems.objects.exclude(sku_serial_no__in=[None]).filter(sku_status__in=[True], sku_qty__gte=10) # remove
+            sku_list = SKUItems.objects.all() # remove
             print(f"SKU LIST : {sku_list}")
             # generate barcode if not exists
-            generate_barcode_list = SKUItems.objects.filter(sku_serial_no = None)
-            if generate_barcode_list.exists():
-                for sku in generate_barcode_list:
-                    sno, filename = generate_barcode()
-                    sku.sku_serial_no = sno
-                    sku.sku_barcode_image = os.path.join('barcode/', filename)
-                    sku.save() 
 
-                # GenerateBRCode().start()
+            GenerateBRCode().start()
             # zipBarcodes()
             return render(request,'doshi/sku-list.html', {'sku_list': sku_list})
         return redirect('login')
@@ -233,7 +226,8 @@ def all_invoices(request):
 
 def invoices(request):
     if 'id' in request.session:
-        invoices = Invoice.objects.filter(invoice_item_scanned_status__in=[False]).values('invoice_no', 'invoice_party_name', 'invoice_date', 'invoice_total_amount').distinct()
+        invoices = Invoice.objects.filter(invoice_item_scanned_status__isnull=True).values('invoice_no', 'invoice_party_name', 'invoice_date', 'invoice_total_amount').distinct()
+        
         return render(request, 'doshi/invoices.html', {'invoices': invoices})
 
     return redirect('login')
@@ -279,16 +273,27 @@ def bypassProducts(request):
     return redirect('login')
         
 
-def invoice_verify(request, invoice_no):  
+def invoice_verify(request, invoice_no):
     invoice_sku_list = Invoice.objects.filter(invoice_no=str(invoice_no)).order_by('invoice_item_scanned_status')
-    invoice_pending_sku_list = Invoice.objects.filter(invoice_no=str(invoice_no), invoice_item_scanned_status=False)
-    print(invoice_pending_sku_list)
-    invoice_barcode_list = [i.invoice_item.sku_serial_no for i in invoice_sku_list]
+    invoice_pending_sku_list = Invoice.objects.filter(invoice_no=str(invoice_no), invoice_item_scanned_status__in=[False])
+    
+    invoice_barcode_list = [i.invoice_item_id for i in invoice_sku_list]
+
+    print(f"Barcode List : {invoice_barcode_list}")
+    serial_numbers = SKUItems.objects.filter(sku_name__in=invoice_barcode_list).values('sku_serial_no')
+
+    print(f"Serial Numbers : {serial_numbers}")
+
     request.session['invoice_barcode_list'] = invoice_barcode_list
+
+    print(f"Verify Invoice : {invoice_sku_list} {invoice_no} {invoice_pending_sku_list}")
+
+    invoice_sku = zip(invoice_sku_list, serial_numbers)
     
     if 'id' in request.session and invoice_sku_list.count() > 0:
-        return render(request, 'doshi/invoice-verify.html', {'invoice_sku_list': invoice_sku_list, 'invoice_no': invoice_no, 'invoice_pending_sku_list': invoice_pending_sku_list})
+        return render(request, 'doshi/invoice-verify.html', {'invoice_sku_list': invoice_sku, 'invoice_no': invoice_no, 'invoice_pending_sku_list': invoice_pending_sku_list})
     return redirect('invoices')
+
 
 
 def verifyInvoice(request):

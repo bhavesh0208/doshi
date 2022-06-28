@@ -39,29 +39,45 @@ class GenerateBRCode(Thread):
         Thread.__init__(self)
     
     def run(self):
-        sku_list = SKUItems.objects.filter(sku_serial_no = None)
+        sku_list = SKUItems.objects.all()
         
-        if sku_list.exists():
-            for sku in sku_list:
-                sno, filename = generate_barcode()
-                sku.sku_serial_no = sno
-                sku.sku_barcode_image = os.path.join('barcode/', filename)
+        for sku in sku_list:
+
+            try:
+
+                if sku.sku_barcode_image:
+
+                    print("ALREADY")
+
+            except Exception as ep:
+
+                print(ep)
+
+                filename = f"{sku.sku_serial_no}.jpg"
+                filepath = f"./media/barcode/{filename}"
+
+                with open(filepath, "wb") as f:
+                    EAN13(sku.sku_serial_no, writer=ImageWriter()).write(f)
+
+
+                sku.sku_barcode_image = filepath
+
                 sku.save()
 
 
-def generate_barcode(sno=None):
-    sno = EAN13(str(randint(100000000000, 999999999999)), writer=ImageWriter())
+# def generate_barcode(sno=None):
+#     sno = EAN13(str(randint(100000000000, 999999999999)), writer=ImageWriter())
     
-    if SKUItems.objects.filter(sku_serial_no=sno).count() > 0:
-        generate_barcode()
-    else:
-        filename = "Barcode_{}.png".format(sno)
-        filepath = "./media/barcode/{}".format(filename)
+#     if SKUItems.objects.filter(sku_serial_no=sno).count() > 0:
+#         generate_barcode()
+#     else:
+#         filename = "Barcode_{}.png".format(sno)
+#         filepath = "./media/barcode/{}".format(filename)
         
-        with open(filepath, "wb") as f:
-            EAN13(sno.ean, writer=ImageWriter()).write(f)
+#         with open(filepath, "wb") as f:
+#             EAN13(sno.ean, writer=ImageWriter()).write(f)
         
-        return (sno.ean, filename)
+#         return (sno.ean, filename)
 
 
 ## Logic Incomplete @ 
