@@ -101,7 +101,7 @@
                         
                         <td>
                           <a
-                            href="{% url 'invoice-details' invoice.invoice_no %}"
+                            href="invoice-details/{{invoice.invoice_no}}"
                             class="btn btn-sm btn-info"
                             role="button"
                             >View</a
@@ -196,6 +196,7 @@
           "lengthMenu": [[5, 10, 25, -1], [5, 10, 25, "All"]]
         });
       });
+      
     </script>
   </body>
 </html>

@@ -79,7 +79,7 @@
                         <th>SKU Total Quantity</th>
                         <th>SKU Item Rate</th>
                         <th>SKU Item Amount</th>
-                        <th>Barcode</th>
+                        {% comment %} <th>Barcode</th> {% endcomment %}
                         <th>Status</th>
                       </tr>
                     </thead>
@@ -92,7 +92,7 @@
                         <td>{{ stk.invoice_item_qty }}</td>
                         <td>{{ stk.invoice_item_rate }}</td>
                         <td>{{ stk.invoice_item_amount }}</td>
-                        <td>{{ stk.invoice_item.sku_serial_no }}</td>
+                        {% comment %} <td>{{ srno.sku_serial_no }}</td> {% endcomment %}
                         
                         {% if stk.invoice_item_scanned_status %}
                         <td>
