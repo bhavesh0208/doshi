@@ -302,26 +302,24 @@ def verifyInvoice(request):
 
         try:
             invoice_no = request.POST['invoice']
-            # check in all sku list whether barcode exists or not --> returns and sku objecct
+
             get_sku = SKUItems.objects.get(sku_serial_no=request.POST['barcode'])
             
-            # Get invoice sku queryset
-            get_invoice = Invoice.objects.filter(invoice_no=invoice_no, invoice_item_scanned_status=False).values('invoice_item__sku_name', 'invoice_item__sku_expiry_date', 'invoice_item_total_scan', 'invoice_item_qty', 'invoice_item_scanned_status')
+            get_invoice = Invoice.objects.filter(invoice_no=invoice_no, 
+                                                invoice_item_scanned_status=False).values('invoice_item__sku_name', 
+                                                                                        'invoice_item__sku_expiry_date', 
+                                                                                        'invoice_item_total_scan', 
+                                                                                        'invoice_item_qty', 
+                                                                                        'invoice_item_scanned_status')
 
-            # convert above queryset to  list 
             get_sku_list = [i['invoice_item__sku_name'] for i in get_invoice ]
-            
-            # print("SKU GET : ", get_sku.sku_name)     BALL BEARING COK UC 206
-
-            # print("GET SKU LIST : ", get_sku_list)       ['BALL BEARING COK UC 206', 'BALL BEARING COK UC 205']
-           
-            # print("get invoice -> ", get_invoice)   <QuerySet [{'invoice_item__sku_name': 'BALL BEARING COK UC 206'}, {'invoice_item__sku_name': 'BALL BEARING COK UC 205'}]>
             
             if (get_sku.sku_name in get_sku_list):
                 get_invoice_item = get_invoice.filter(invoice_item=get_sku)
                 
                 if get_invoice_item[0]['invoice_item__sku_expiry_date'] < date.today():
                     raise Exception('SKU Expired')
+                
                 else:
                     if not get_invoice_item[0]['invoice_item_scanned_status']:
                         get_invoice_item.update(invoice_item_total_scan=F('invoice_item_total_scan') + 1)
@@ -330,9 +328,6 @@ def verifyInvoice(request):
                             Invoice.objects.filter(invoice_item__sku_name=get_sku.sku_name).update(invoice_item_scanned_status=True)
                     else:
                         raise Exception('SKU scanning completed')
-                
-                
-                # sku_qty_invoice =  Invoice.objects.filter(invoice_no=invoice_no, invoice_item=get_sku)[0].invoice_item_qty
 
                 get_sku.sku_qty -= 1
                 get_sku.save()
