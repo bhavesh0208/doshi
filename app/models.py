@@ -24,9 +24,9 @@ class User(Model):
 
 class Company(Model):
     company_name =  CharField(max_length=70, default="", unique=True)
-    company_address = CharField(max_length=70, default="", blank=True, null=True)
-    company_contact = CharField(max_length=10, default="", blank=True, null=True)
-    company_formal_name = CharField(max_length=70, default="ABC", blank=True, null=True)
+    company_address = CharField(max_length=70, default="", blank=True)
+    company_contact = CharField(max_length=10, default="", blank=True)
+    company_formal_name = CharField(max_length=70, default="ABC", blank=True)
     # comapny_starting_from = DateField()
 
 
@@ -34,7 +34,7 @@ class SKUItems(Model):
     sku_name = CharField(max_length=100, unique=True, default="")
     sku_qty = IntegerField(default=0)
     sku_rate = FloatField(default=0.0)
-    sku_serial_no = CharField(default="", max_length=200, unique=True, blank=True, null=True)
+    sku_serial_no = CharField(default="", max_length=200, unique=True, blank=True)
     sku_barcode_image = ImageField(upload_to='barcode/', default='backup/')
     sku_status = BooleanField(default=True) # True for Active and False for Inactive
     sku_expiry_date = DateField(default=date.today())
@@ -48,7 +48,7 @@ class Invoice(Model):
     invoice_party_name = CharField(max_length=200, default="")
     invoice_sales_ledger = CharField(max_length=200, default="")
     invoice_date = DateField(auto_now_add=True)
-    invoice_item = ForeignKey(SKUItems, on_delete=SET_NULL, default=None, blank=True, null=True)
+    invoice_item = ForeignKey(SKUItems, on_delete=DO_NOTHING, default=None, blank=True)
     invoice_item_qty = IntegerField(default=0)
     invoice_item_rate = FloatField(default=0.0)
     invoice_item_amount = FloatField(default=0.0)
@@ -56,8 +56,8 @@ class Invoice(Model):
     invoice_total_qty = IntegerField(default=0)
     invoice_total_amount = FloatField(default=0.0)
     invoice_item_scanned_status = BooleanField(default=False)
-    invoice_user = ForeignKey(User, on_delete=SET_NULL, default=None, blank=True, null=True)    # user who created the invoice
-    invoice_company = ForeignKey(Company, on_delete=SET_NULL, default=None, blank=True, null=True)
+    invoice_user = ForeignKey(User, on_delete=DO_NOTHING, default=None, blank=True)    # user who created the invoice
+    invoice_company = ForeignKey(Company, on_delete=DO_NOTHING, default=None, blank=True)
 
     class Meta:
         unique_together = ('invoice_no', 'invoice_item')
@@ -72,7 +72,7 @@ class ByPassModel(Model):
     bypass_sku_name = ForeignKey(SKUItems, on_delete=CASCADE, default=None, blank=True)
     bypass_against_sku_name = ForeignKey(SKUItems, on_delete=CASCADE, default=None, blank=True, related_name='bypass_against_sku_name')
     bypass_datetime = DateTimeField(default=datetime.now)
-    # bypass_by = ForeignKey(invoice_user, on_delete=SET_NULL, default=None, blank=True)
+    # bypass_by = ForeignKey(invoice_user, on_delete=DO_NOTHING, default=None, blank=True)
     
 
     def __str__(self):

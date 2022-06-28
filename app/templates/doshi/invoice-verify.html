@@ -229,7 +229,7 @@
                   >
                     {% for sku in invoice_pending_sku_list %}
                     <option value="{{sku.invoice_item__sku_name}}">
-                      {{ sku.invoice_item__sku_name }}
+                      {{ sku.invoice_item_id }}
                     </option>
                     {% endfor %}
                   </select>

@@ -46,9 +46,7 @@ class GenerateBRCode(Thread):
             try:
 
                 if sku.sku_barcode_image:
-
-                    print("ALREADY")
-
+                    pass
             except Exception as ep:
 
                 print(ep)

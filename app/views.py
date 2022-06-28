@@ -226,7 +226,7 @@ def all_invoices(request):
 
 def invoices(request):
     if 'id' in request.session:
-        invoices = Invoice.objects.filter(invoice_item_scanned_status__isnull=True).values('invoice_no', 'invoice_party_name', 'invoice_date', 'invoice_total_amount').distinct()
+        invoices = Invoice.objects.filter(invoice_item_scanned_status__in=[False]).values('invoice_no', 'invoice_party_name', 'invoice_date', 'invoice_total_amount').distinct()
         
         return render(request, 'doshi/invoices.html', {'invoices': invoices})
 
@@ -252,7 +252,7 @@ def bypassProducts(request):
 
 def invoice_verify(request, invoice_no):
     invoice_sku_list = Invoice.objects.filter(invoice_no=str(invoice_no)).order_by('invoice_item_scanned_status')
-    invoice_pending_sku_list = Invoice.objects.filter(invoice_no=str(invoice_no), invoice_item_scanned_status__in=[False])
+    invoice_pending_sku_list = Invoice.objects.filter(invoice_no=str(invoice_no), invoice_item_scanned_status__in=[False]) #, invoice_item_scanned_status__in=[False])
     
     invoice_barcode_list = [i.invoice_item_id for i in invoice_sku_list]
 
@@ -276,7 +276,7 @@ def verifyInvoice(request):
             invoice_no = request.POST['invoice']
 
             get_sku = SKUItems.objects.get(sku_serial_no=request.POST['barcode'])
-
+            print(get_sku)
             get_invoice = Invoice.objects.filter(invoice_no=invoice_no)
 
             print(f"GET INVOICE : {get_invoice}")
