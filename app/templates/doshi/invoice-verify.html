@@ -11,7 +11,7 @@
     <meta name="description" content="" />
     <meta name="author" content="" />
 
-    <title>SB Admin 2 - Tables</title>
+    <title>Doshi Brothers | Invoice</title>
 
     <!-- Custom fonts for this template -->
     <link
@@ -315,17 +315,6 @@
             e.preventDefault();
             e.stopPropagation();
             console.log('Not going anywhere....')
-          }
-          //console.log({{ invoice_sku_list|length }});
-          else if({{ invoice_sku_list|length }} == 0)
-          {
-
-            var alert_element = '<div class=" m-4 alert alert-danger alert-dismissible fade show" role="alert"> <strong>Cannot proceed with empty table</strong><button type="button" class="close" data-dismiss="alert" id="close-alert" aria-label="Close"> <span aria-hidden="true">&times;</span></button></div>';
-
-            $(".container-fluid").before(alert_element);
-            e.preventDefault();
-            e.stopPropagation();
-            console.log('Not going anywhere because table is empty....');
           }
           else
           {
