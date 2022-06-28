@@ -241,29 +241,6 @@ def invoice_details(request, invoice_no):
         return render(request, 'doshi/invoice-details.html', {'invoice_sku_list': invoice_sku_list, 'invoice_details': invoice_details})
 
 
-# def barcodes(request):
-#     if request.method == 'POST':
-#         try:
-#             sku_id = request.POST['sku_id']
-#             get_sku = SKUItems.objects.filter(pk=sku_id, sku_serial_no=None)
-            
-#             if get_sku.count() > 0:
-#                 sno, filename = generate_barcode()
-#                 get_sku.update(sku_serial_no = sno, sku_barcode_image = os.path.join('barcode/', filename))
-                
-#             else:
-#                 raise Exception('Unable to generate barcode ')
-#         except Exception as e:
-#             messages.error(request, e)
-#             return redirect('barcodes')
-        
-#     if 'id' in request.session:
-#         sku_list = SKUItems.objects.filter(sku_serial_no=None)
-#         return render(request,'doshi/barcodes.html', {'sku_list': sku_list})
-
-#     return redirect('login')
-
-
 def bypassProducts(request):
 
     if 'id' in request.session:
@@ -279,14 +256,9 @@ def invoice_verify(request, invoice_no):
     
     invoice_barcode_list = [i.invoice_item_id for i in invoice_sku_list]
 
-    print(f"Barcode List : {invoice_barcode_list}")
     serial_numbers = SKUItems.objects.filter(sku_name__in=invoice_barcode_list).values('sku_serial_no')
 
-    print(f"Serial Numbers : {serial_numbers}")
-
     request.session['invoice_barcode_list'] = invoice_barcode_list
-
-    print(f"Verify Invoice : {invoice_sku_list} {invoice_no} {invoice_pending_sku_list}")
 
     invoice_sku = zip(invoice_sku_list, serial_numbers)
     
@@ -304,30 +276,34 @@ def verifyInvoice(request):
             invoice_no = request.POST['invoice']
 
             get_sku = SKUItems.objects.get(sku_serial_no=request.POST['barcode'])
-            
-            get_invoice = Invoice.objects.filter(invoice_no=invoice_no, 
-                                                invoice_item_scanned_status=False).values('invoice_item__sku_name', 
-                                                                                        'invoice_item__sku_expiry_date', 
-                                                                                        'invoice_item_total_scan', 
-                                                                                        'invoice_item_qty', 
-                                                                                        'invoice_item_scanned_status')
 
-            get_sku_list = [i['invoice_item__sku_name'] for i in get_invoice ]
-            
+            get_invoice = Invoice.objects.filter(invoice_no=invoice_no)
+
+            print(f"GET INVOICE : {get_invoice}")
+
+            get_sku_list = [i.invoice_item_id for i in get_invoice]
+
+            print(f"SKU LIST : {get_sku_list}")
+
             if (get_sku.sku_name in get_sku_list):
-                get_invoice_item = get_invoice.filter(invoice_item=get_sku)
+                print("TUE")
+                get_invoice_item = get_invoice.values()
+
+                print(f"GET INVOICE ITEM : {get_invoice_item}")
                 
-                if get_invoice_item[0]['invoice_item__sku_expiry_date'] < date.today():
-                    raise Exception('SKU Expired')
                 
+                if not get_invoice_item[0]['invoice_item_scanned_status']:
+                    get_invoice_item.update(invoice_item_total_scan=F('invoice_item_total_scan') + 1)
+
+                    print("OKOK")
+            
+                    if get_invoice_item[0]['invoice_item_total_scan'] == get_invoice_item[0]['invoice_item_qty']:
+                        print(get_invoice_item)
+                        Invoice.objects.filter(invoice_item__sku_name=get_sku.sku_name).update(invoice_item_scanned_status=True)
+            
                 else:
-                    if not get_invoice_item[0]['invoice_item_scanned_status']:
-                        get_invoice_item.update(invoice_item_total_scan=F('invoice_item_total_scan') + 1)
-                        if get_invoice_item[0]['invoice_item_total_scan'] == get_invoice_item[0]['invoice_item_qty']:
-                            print(get_invoice_item)
-                            Invoice.objects.filter(invoice_item__sku_name=get_sku.sku_name).update(invoice_item_scanned_status=True)
-                    else:
-                        raise Exception('SKU scanning completed')
+                    print("PLPLPL")
+                    raise Exception('SKU scanning completed')
 
                 get_sku.sku_qty -= 1
                 get_sku.save()
