@@ -88,7 +88,7 @@
                       {% for stk in invoice_sku_list %}
                       <tr>
                         <td>{{ forloop.counter }}</td>
-                        <td id="1">{{ stk.invoice_item }}</td>
+                        <td>{{ stk.invoice_item_id}}</td>
                         <td>{{ stk.invoice_item_qty }}</td>
                         <td>{{ stk.invoice_item_rate }}</td>
                         <td>{{ stk.invoice_item_amount }}</td>

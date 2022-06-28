@@ -71,7 +71,7 @@ class ByPassModel(Model):
     bypass_invoice_no = ForeignKey(Invoice, on_delete=CASCADE, default=None, blank=True)
     bypass_sku_name = ForeignKey(SKUItems, on_delete=CASCADE, default=None, blank=True)
     bypass_against_sku_name = ForeignKey(SKUItems, on_delete=CASCADE, default=None, blank=True, related_name='bypass_against_sku_name')
-    bypass_datetime = DateTimeField(auto_now_add=True)
+    bypass_datetime = DateTimeField(default=datetime.now)
     # bypass_by = ForeignKey(invoice_user, on_delete=SET_NULL, default=None, blank=True)
     
 

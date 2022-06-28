@@ -75,7 +75,8 @@ def zipBarcodes():
         for image_path in sku_file_paths:
             if image_path == "backup/":
                 continue
-            archive.write(os.path.join(settings.MEDIA_ROOT, image_path), arcname=os.path.basename(image_path))
+            elif image_path is not None :
+                archive.write(os.path.join(settings.MEDIA_ROOT, image_path), arcname=os.path.basename(image_path))
         # print(archive.namelist())
 
 def sendEmailReport():

@@ -183,11 +183,11 @@ def reset_password(request):
 def sku_items(request):
     try:
         if 'id' in request.session:
-            sku_list = SKUItems.objects.exclude(sku_serial_no = None).filter(sku_status=1, sku_qty__gte=10) # remove
-            
+            sku_list = SKUItems.objects.exclude(sku_serial_no__in=[None]).filter(sku_status__in=[True], sku_qty__gte=10) # remove
+            print(f"SKU LIST : {sku_list}")
             # generate barcode if not exists
             generate_barcode_list = SKUItems.objects.filter(sku_serial_no = None)
-            if  generate_barcode_list.exists():
+            if generate_barcode_list.exists():
                 for sku in generate_barcode_list:
                     sno, filename = generate_barcode()
                     sku.sku_serial_no = sno
@@ -195,25 +195,45 @@ def sku_items(request):
                     sku.save() 
 
                 # GenerateBRCode().start()
-            zipBarcodes()
+            # zipBarcodes()
             return render(request,'doshi/sku-list.html', {'sku_list': sku_list})
         return redirect('login')
     except Exception as e:
-        print(e)
+        print("Exception is : ", e)
         return redirect('index')
 
 
+# def sku_items(request):
+    
+#     if 'id' in request.session:
+#         sku_list = SKUItems.objects.exclude(sku_serial_no__in=[None]).filter(sku_status__in=[True], sku_qty__gte=10) # remove
+#         print(f"SKU LIST : {sku_list}")
+#         # generate barcode if not exists
+#         generate_barcode_list = SKUItems.objects.filter(sku_serial_no = None)
+#         if generate_barcode_list.exists():
+#             for sku in generate_barcode_list:
+#                 sno, filename = generate_barcode()
+#                 sku.sku_serial_no = sno
+#                 sku.sku_barcode_image = os.path.join('barcode/', filename)
+#                 sku.save() 
+
+#             # GenerateBRCode().start()
+#         # zipBarcodes()
+#         return render(request,'doshi/sku-list.html', {'sku_list': sku_list})
+#     return redirect('index')
+    
+
 def all_invoices(request):
     if 'id' in request.session:
-        invoices = Invoice.objects.all().values('invoice_no', 'invoice_party_name', 'invoice_date', 'invoice_total_amount').distinct()
+        invoices = Invoice.objects.values('invoice_no', 'invoice_party_name', 'invoice_date', 'invoice_total_amount').distinct()
         return render(request, 'doshi/all-invoices.html', {'invoices': invoices})
 
     return redirect('login')
-        
+
 
 def invoices(request):
     if 'id' in request.session:
-        invoices = Invoice.objects.filter(invoice_item_scanned_status=False).values('invoice_no', 'invoice_party_name', 'invoice_date', 'invoice_total_amount').distinct()
+        invoices = Invoice.objects.filter(invoice_item_scanned_status__in=[False]).values('invoice_no', 'invoice_party_name', 'invoice_date', 'invoice_total_amount').distinct()
         return render(request, 'doshi/invoices.html', {'invoices': invoices})
 
     return redirect('login')
@@ -221,8 +241,9 @@ def invoices(request):
 
 def invoice_details(request, invoice_no):
     if 'id' in request.session:
-        invoice_sku_list = Invoice.objects.filter(invoice_no=str(invoice_no))
+        invoice_sku_list = Invoice.objects.filter(invoice_no=str(invoice_no)).values()
         invoice_details = invoice_sku_list[0]
+
         return render(request, 'doshi/invoice-details.html', {'invoice_sku_list': invoice_sku_list, 'invoice_details': invoice_details})
 
 

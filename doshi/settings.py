@@ -75,23 +75,20 @@ WSGI_APPLICATION = 'doshi.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
-'''
+
 DATABASES = {
+
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': 'mydatabase',
-    }
+        'ENGINE': 'djongo',
+        'NAME': 'doshi',
+        'ENFORCE_SCHEMA': False,
+    'CLIENT': {
+        'host': 'mongodb+srv://doshibrothers:doshi@cluster0.ze54zmc.mongodb.net/doshi',
+        },
+    },
 }
-'''
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'doshidb',
-        'USER': 'root',
-        'PASSWORD': 'abc123',
-        'HOST': 'localhost'
-    }
-}
+
+
 
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
