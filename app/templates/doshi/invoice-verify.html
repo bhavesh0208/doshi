@@ -122,7 +122,7 @@
                       {% for stk, srno in invoice_sku_list %}
                       <tr>
                         <td>{{ forloop.counter }}</td>
-                        <td id="{{stk.invoice_item_id}}">{{ stk.invoice_item_id }}</td>
+                        <td id="{{stk.invoice_item_id}}">{{ srno.sku_name }}</td>
                         <td>
                           {{ stk.invoice_item_total_scan }} / {{ stk.invoice_item_qty }}
                         </td>
@@ -227,9 +227,9 @@
                     class="form-control form-control-sm"
                     id="sku-against-name"
                   >
-                    {% for sku in invoice_pending_sku_list %}
+                    {% for sku in pending_sku_names %}
                     <option value="{{sku.invoice_item__sku_name}}">
-                      {{ sku.invoice_item_id }}
+                      {{ sku.sku_name }}
                     </option>
                     {% endfor %}
                   </select>

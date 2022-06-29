@@ -50,7 +50,7 @@ class Invoice(Model):
     invoice_date = DateField(auto_now_add=True)
     invoice_item = ForeignKey(SKUItems, on_delete=DO_NOTHING, default=None, blank=True)
     invoice_item_qty = IntegerField(default=0)
-    invoice_item_rate = FloatField(default=0.0)
+    invoice_item_rate = CharField(max_length=200, default="")
     invoice_item_amount = FloatField(default=0.0)
     invoice_item_total_scan = IntegerField(default=0.0)
     invoice_total_qty = IntegerField(default=0)
