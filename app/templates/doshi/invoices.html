@@ -12,7 +12,7 @@
     <meta name="description" content="" />
     <meta name="author" content="" />
 
-    <title>DOSHI | Invoices</title>
+    <title>Doshi Brothers | Invoice</title>
 
     <!-- Custom fonts for this template -->
     <link
@@ -100,8 +100,7 @@
                         <td>{{ invoice.invoice_party_name }}</td>
                         <td>{{ invoice.invoice_date }}</td>
                         <td>{{ invoice.invoice_total_amount }}</td>
-                        {% status invoice.invoice_no as mystatus %}
-                        {% if mystatus %}
+                        {% if invoice.invoice_item_scanned_status %}
                         <td>
                           <h5>
                             <span class="badge rounded-pill badge-success">Completed</span>
@@ -110,7 +109,6 @@
                         {% else %}
                         <td>
                           <h5>
-                            {% comment %} <span class="badge rounded-pill badge-danger">Pending</span> {% endcomment %}
                             <span class="badge rounded-pill badge-danger">Pending</span>
                           </h5>
                         </td>
@@ -118,7 +116,7 @@
                         
                         <td>
                           <a
-                            href="{% url 'invoice-verify' invoice.invoice_no %}"
+                            href="invoice-verify/{{invoice.invoice_no}}"
                             class="btn btn-sm btn-info"
                             role="button"
                             >View</a

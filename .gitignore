@@ -3,3 +3,5 @@ app/__pycache__/
 app/migrations/
 mydatabase
 media/
+app/templatetags/__pycache__/
+doshi/__pycache__/

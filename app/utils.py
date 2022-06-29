@@ -39,44 +39,54 @@ class GenerateBRCode(Thread):
         Thread.__init__(self)
     
     def run(self):
-        sku_list = SKUItems.objects.filter(sku_serial_no = None)
+        sku_list = SKUItems.objects.all()
         
-        if sku_list.exists():
-            for sku in sku_list:
-                sno = generate_barcode()
-                print(sno)
-                sku.sku_serial_no = sno[0]
-                sku.sku_barcode_image = os.path.join('barcode/', sno[1])
+        for sku in sku_list:
+
+            try:
+
+                if sku.sku_barcode_image:
+                    pass
+            except Exception as ep:
+
+                print(ep)
+
+                filename = f"{sku.sku_serial_no}.jpg"
+                filepath = f"./media/barcode/{filename}"
+
+                with open(filepath, "wb") as f:
+                    EAN13(sku.sku_serial_no, writer=ImageWriter()).write(f)
+
+
+                sku.sku_barcode_image = filepath
+
                 sku.save()
 
 
-def generate_barcode(sno=None):
-    sno = EAN13(str(randint(100000000000, 999999999999)), writer=ImageWriter())
+# def generate_barcode(sno=None):
+#     sno = EAN13(str(randint(100000000000, 999999999999)), writer=ImageWriter())
     
-    if SKUItems.objects.filter(sku_serial_no=sno).count() > 0:
-        generate_barcode()
-    else:
-        filename = "Barcode_{}.png".format(sno)
-        filepath = "./media/barcode/{}".format(filename)
+#     if SKUItems.objects.filter(sku_serial_no=sno).count() > 0:
+#         generate_barcode()
+#     else:
+#         filename = "Barcode_{}.png".format(sno)
+#         filepath = "./media/barcode/{}".format(filename)
         
-        with open(filepath, "wb") as f:
-            EAN13(sno.ean, writer=ImageWriter()).write(f)
+#         with open(filepath, "wb") as f:
+#             EAN13(sno.ean, writer=ImageWriter()).write(f)
         
-        return [sno.ean, filename]
+#         return (sno.ean, filename)
 
 
 ## Logic Incomplete @ 
 def zipBarcodes():
-    """Returns the zip file path """
-
-    #  calling function to get all file paths in the directory
     sku_file_paths = SKUItems.objects.all().values_list('sku_barcode_image', flat=True)
-    
     with ZipFile('./media/AllBarcodes.zip','w') as archive:
         for image_path in sku_file_paths:
             if image_path == "backup/":
                 continue
-            archive.write(os.path.join(settings.MEDIA_ROOT, image_path), arcname=os.path.basename(image_path))
+            elif image_path is not None :
+                archive.write(os.path.join(settings.MEDIA_ROOT, image_path), arcname=os.path.basename(image_path))
         # print(archive.namelist())
 
 def sendEmailReport():

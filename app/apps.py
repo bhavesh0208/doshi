@@ -6,5 +6,6 @@ class AppConfig(AppConfig):
     name = 'app'
 
     def ready(self):
-        from .utils import startSchedular
-        startSchedular()
+        from .utils import startSchedular, GenerateBRCode
+        # startSchedular()
+        # GenerateBRCode().start()    

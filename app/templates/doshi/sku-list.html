@@ -11,7 +11,7 @@
     <meta name="description" content="" />
     <meta name="author" content="" />
 
-    <title>DOSHI | SKUS </title>
+    <title>Doshi Brothers | SKU </title>
 
     <!-- Custom fonts for this template -->
     <link
@@ -94,7 +94,18 @@
                         <td></td>
                         <td>{{ stk.sku_serial_no }}</td>
 
-
+                        {% if stk.sku_barcode_image == None %}
+                        <td>
+                          <a
+                            id=""
+                            href="#"
+                            role="button"
+                            class="btn btn-sm btn-outline-primary"
+                            download
+                            ><i class="fas fa-download"> Download</i></a
+                          >
+                        </td>
+                        {% else %}
                         <td>
                           <a
                             id=""
@@ -105,6 +116,7 @@
                             ><i class="fas fa-download"> Download</i></a
                           >
                         </td>
+                        {% endif %}
                       </tr>
                       {% endfor %}
                     </tbody>
