@@ -8,4 +8,4 @@ class AppConfig(AppConfig):
     def ready(self):
         from .utils import startSchedular, GenerateBRCode
         # startSchedular()
-        # GenerateBRCode().start()    
+        GenerateBRCode().start()    

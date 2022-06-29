@@ -85,7 +85,7 @@
                         <td>{{ invoice.invoice_party_name }}</td>
                         <td>{{ invoice.invoice_date }}</td>
                         <td>{{ invoice.invoice_total_amount }}</td>
-                        {% if invoice.invoice_item_scanned_status == True %}
+                        {% if invoice.invoice_item_scanned_status %}
                         <td>
                           <h5>
                             <span class="badge rounded-pill badge-success"> Completed </span>

@@ -34,7 +34,6 @@ class SKUItems(Model):
     sku_name = CharField(max_length=100, unique=True, default="")
     sku_qty = IntegerField(default=0)
     sku_rate = FloatField(default=0.0)
-
     sku_serial_no = CharField(default="", max_length=200, unique=True, blank=True)
     sku_barcode_image = ImageField(upload_to='barcode/', default='backup/')
     sku_status = BooleanField(default=True) # True for Active and False for Inactive

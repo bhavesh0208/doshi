@@ -24,7 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-&8$w1t%eunnmnz18zeqe8gx4p74p7-p3))y_ai_e!e46)ux7k$'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['doshibrothers.herokuapp.com', '*']
 
@@ -40,7 +40,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django_extensions',
     'app',
-    'admin_honeypot'
 ]
 
 MIDDLEWARE = [

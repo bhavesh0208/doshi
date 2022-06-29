@@ -228,7 +228,7 @@
                     id="sku-against-name"
                   >
                     {% for sku in pending_sku_names %}
-                    <option value="{{sku.invoice_item__sku_name}}">
+                    <option value="{{sku.sku_name}}">
                       {{ sku.sku_name }}
                     </option>
                     {% endfor %}
