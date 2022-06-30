@@ -91,7 +91,7 @@
                         <td>{{ stk.sku_name }}</td>
                         <td>{{ stk.sku_qty }}</td>
                         <td>{{ stk.sku_rate }}</td>
-                        <td></td>
+                        <td>{{ stk.sku_amount }}</td>
                         <td>{{ stk.sku_serial_no }}</td>
 
                         {% if stk.sku_barcode_image == None %}
@@ -109,7 +109,7 @@
                         <td>
                           <a
                             id=""
-                            href="{{MEDIA}}{{ stk.sku_barcode_image.url }}"
+                            href="#"
                             role="button"
                             class="btn btn-sm btn-outline-primary"
                             download
@@ -198,7 +198,7 @@
     <!-- Page level custom scripts -->
     <script src="{% static 'assets/js/demo/datatables-demo.js' %}"></script>
 
-    <script>
+    {% comment %} <script>
       var stockData = document.getElementById("stockDataTable");
       for (var i = 1; i < stockData.rows.length; i++) {
         stockQty = stockData.rows[i].cells.item(2).innerHTML;
@@ -207,7 +207,7 @@
           stockQty * stockRate
         ).toFixed(3);
       }
-    </script>
+    </script> {% endcomment %}
 
     <script>
       $(document).ready(function () {

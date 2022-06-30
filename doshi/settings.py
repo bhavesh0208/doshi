@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django_extensions',
     'app',
+    'storages',
 ]
 
 MIDDLEWARE = [
@@ -125,7 +126,6 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
 STATIC_URL = 'static/'
-
 MEDIA_URL = 'media/'
 
 if DEBUG:
@@ -133,8 +133,6 @@ if DEBUG:
 else:
     STATIC_ROOT = os.path.join(BASE_DIR, 'static')
     MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-
-
 
 
 # Default primary key field type
@@ -151,3 +149,11 @@ EMAIL_PORT = "587"
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'djangodeveloper09@gmail.com'
 EMAIL_HOST_PASSWORD = 'gljvtlcrrdfemcbw'        # Django@123456
+
+
+# AWS S3 Storage
+AWS_ACCESS_KEY_ID = 'AKIARLXGH5CSVAHHWR7Z'
+AWS_SECRET_ACCESS_KEY = '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'
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+AWS_STORAGE_BUCKET_NAME = 'doshi-media'
+AWS_S3_REGION_NAME = 'ap-south-1'

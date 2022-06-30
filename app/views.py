@@ -21,17 +21,18 @@ from django.contrib.auth.hashers import make_password, check_password
 
 def index(request):
     if 'id' in request.session:
-        # if user.role in ['CLIENT_HCH', 'CLIENT']:
-        #     return redirect('sku-items')
-        # else:
-        total_bypass_sku = ByPassModel.objects.filter(bypass_date=date.today()).count()
-        total_sales = sum([float(i['invoice_item_amount']) for i in Invoice.objects.filter(invoice_item_scanned_status__in=[True]).values('invoice_item_amount')])
-        total_sku_rate = round(sum([float(i['sku_rate']) for i in SKUItems.objects.all().values('sku_rate')]), 2)
-        total_pending_invoices = Invoice.objects.filter(invoice_item_scanned_status__in=[False]).values('invoice_no')
-        inv = len(set([i['invoice_no'] for i in total_pending_invoices]))
+        role = request.session['role']
+        if role in ['CLIENT_HCH', 'CLIENT']:
+            return redirect('sku-items')
+        else:
+            total_bypass_sku = ByPassModel.objects.filter(bypass_date=date.today()).count()
+            total_sales = sum([float(i['invoice_item_amount']) for i in Invoice.objects.filter(invoice_item_scanned_status__in=[True]).values('invoice_item_amount')])
+            total_sku_rate = round(sum([float(i['sku_rate']) for i in SKUItems.objects.all().values('sku_rate')]), 2)
+            total_pending_invoices = Invoice.objects.filter(invoice_item_scanned_status__in=[False]).values('invoice_no')
+            inv = len(set([i['invoice_no'] for i in total_pending_invoices]))
 
-        return render(request, 'doshi/index.html', {'total_bypass_sku': total_bypass_sku, 'total_sales': total_sales,
-                                                    'total_sku_rate': total_sku_rate, 'total_pending_invoices': inv})
+            return render(request, 'doshi/index.html', {'total_bypass_sku': total_bypass_sku, 'total_sales': total_sales,
+                                                        'total_sku_rate': total_sku_rate, 'total_pending_invoices': inv})
     else:
         return redirect('login')
         
@@ -227,6 +228,7 @@ def sku_items(request):
 #         return render(request,'doshi/sku-list.html', {'sku_list': sku_list})
 #     return redirect('index')
 
+
 def invoice_status(invoice_no):
     status = False
     all_obj = Invoice.objects.filter(invoice_no=invoice_no, invoice_item_scanned_status__in=[False])
@@ -240,41 +242,47 @@ def invoice_status(invoice_no):
 
 def all_invoices(request):
     if 'id' in request.session:
+        role = request.session['role']
+        if role in ['CLIENT_HCH', 'CLIENT']:
+            return redirect('sku-items')
+        else:
 
-        invoices = Invoice.objects.values('invoice_no', 'invoice_party_name', 'invoice_date', 'invoice_total_amount').distinct()
+            invoices = Invoice.objects.filter(invoice_item_scanned_status__in=[False, True]).values('invoice_no', 'invoice_party_name', 'invoice_date', 'invoice_total_amount').distinct()
+            
 
-        get_all_inv_no = [i['invoice_no'] for i in invoices]
+            get_all_status = [ invoice_status(i['invoice_no']) for i in invoices ]
+            data = zip(invoices, get_all_status)
+            print(data)
 
-        print(get_all_inv_no)
-
-        get_invoice_status = [Invoice.objects.filter(invoice_no=i).values('invoice_item_scanned_status') for i in get_all_inv_no]
-
-        for each in get_invoice_status:
-
-            for each_one in each:
-
-                print(f"EACH : {each_one['invoice_item_scanned_status']}")
-
-        print(f"GET DONE : {get_invoice_status}")
-        
-        return render(request, 'doshi/all-invoices.html', {'invoices': invoices})
+            #print(get_all_status)
+            return render(request, 'doshi/all-invoices.html', {'invoices': data, 'get_all_status': get_all_status })
 
     return redirect('login')
 
 
 def invoices(request):
     if 'id' in request.session:
-        invoices = Invoice.objects.filter(invoice_item_scanned_status__in=[False]).values('invoice_no', 'invoice_party_name', 'invoice_date', 'invoice_total_amount').distinct()
-        
-        return render(request, 'doshi/invoices.html', {'invoices': invoices})
+        role = request.session['role']
+        if role in ['CLIENT_HCH', 'CLIENT']:
+            return redirect('sku-items')
+        else:
+
+            invoices = Invoice.objects.filter(invoice_item_scanned_status__in=[False]).values('invoice_no', 'invoice_party_name', 'invoice_date', 'invoice_total_amount').distinct()
+            
+            return render(request, 'doshi/invoices.html', {'invoices': invoices})
 
     return redirect('login')
 
 
 def invoice_details(request, invoice_no):
     if 'id' in request.session:
-        invoice_sku_list = Invoice.objects.filter(invoice_no=str(invoice_no)).values()
-        invoice_details = invoice_sku_list[0]
+        role = request.session['role']
+        if role in ['CLIENT_HCH', 'CLIENT']:
+            return redirect('sku-items')
+        else:
+
+            invoice_sku_list = Invoice.objects.filter(invoice_no=str(invoice_no)).values()
+            invoice_details = invoice_sku_list[0]
 
         return render(request, 'doshi/invoice-details.html', {'invoice_sku_list': invoice_sku_list, 'invoice_details': invoice_details})
 
@@ -282,14 +290,19 @@ def invoice_details(request, invoice_no):
 def bypassProducts(request):
 
     if 'id' in request.session:
-        get_bypass_list = ByPassModel.objects.all()
-        return render(request, 'doshi/bypass-products.html', {'bypass_list':get_bypass_list })
+        role = request.session['role']
+        if role in ['CLIENT_HCH', 'CLIENT']:
+            return redirect('sku-items')
+        else:
+            get_bypass_list = ByPassModel.objects.all()
+            return render(request, 'doshi/bypass-products.html', {'bypass_list':get_bypass_list })
         
     return redirect('login')
         
 
 def invoice_verify(request, invoice_no):
-    invoice_sku_list = Invoice.objects.filter(invoice_no=str(invoice_no)).order_by('invoice_item_scanned_status')
+
+    invoice_sku_list = Invoice.objects.filter(invoice_no=str(invoice_no))
     
     invoice_pending_sku_list = Invoice.objects.filter(invoice_no=invoice_no, invoice_item_scanned_status__in=[False]) #, invoice_item_scanned_status__in=[False])
     
@@ -305,7 +318,11 @@ def invoice_verify(request, invoice_no):
     invoice_sku = zip(invoice_sku_list, serial_numbers)
     
     if 'id' in request.session and invoice_sku_list.count() > 0:
-        return render(request, 'doshi/invoice-verify.html', {'invoice_sku_list': invoice_sku, 'invoice_no': invoice_no, 'invoice_pending_sku_list': invoice_pending_sku_list, 'pending_sku_names': pending_sku_names})
+        role = request.session['role']
+        if role in ['CLIENT_HCH', 'CLIENT']:
+            return redirect('sku-items')
+        else:
+            return render(request, 'doshi/invoice-verify.html', {'invoice_sku_list': invoice_sku, 'invoice_no': invoice_no, 'invoice_pending_sku_list': invoice_pending_sku_list, 'pending_sku_names': pending_sku_names})
     return redirect('invoices')
 
 
@@ -318,6 +335,7 @@ def verifyInvoice(request):
             invoice_no = request.POST['invoice']
 
             get_sku = SKUItems.objects.get(sku_serial_no=request.POST['barcode'])
+            print(get_sku.sku_base_qty, "Get SKU -> ", get_sku)
 
             get_invoice = Invoice.objects.filter(invoice_no=invoice_no)
 
@@ -454,3 +472,12 @@ def generate_csv(request):
         writer.writerow(user)
     
     return response
+
+
+def map_data(request):
+    with open('skudata.csv', mode='r') as infile:
+        reader = csv.reader(infile)
+        
+    with open('coors_new.csv', mode='w') as outfile:
+        writer = csv.writer(outfile)
+        mydict = {rows[0]:rows[1] for rows in reader}

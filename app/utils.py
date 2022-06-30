@@ -6,6 +6,7 @@ from io import BytesIO
 from barcode.writer import ImageWriter
 from django.conf import settings
 import os
+from django.conf import settings
 from django.core.mail import EmailMessage
 from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime
@@ -52,7 +53,8 @@ class GenerateBRCode(Thread):
                 print(ep)
 
                 filename = f"{sku.sku_serial_no}.jpg"
-                filepath = f"./media/barcode/{filename}"
+                filepath = f"/media/barcode/{filename}"
+                print(os)
 
                 with open(filepath, "wb") as f:
                     EAN13(sku.sku_serial_no, writer=ImageWriter()).write(f)
@@ -63,19 +65,28 @@ class GenerateBRCode(Thread):
                 sku.save()
 
 
-# def generate_barcode(sno=None):
-#     sno = EAN13(str(randint(100000000000, 999999999999)), writer=ImageWriter())
+def generate_BRC():
+    for each in SKUItems.objects.all():
+        filename = str(each.sku_serial_no)+".jpg"
+        filepath = settings.MEDIA_URL + filename
+        with open(filepath, "wb") as f:
+            EAN13(each.sku_serial_no, writer=ImageWriter()).write(f)
+        each.sku_barcode_image = filepath
+        each.save()
+
+
+def generate_barcode(sno=None):
+    # sno = EAN13(str(randint(100000000000, 999999999999)), writer=ImageWriter())
     
-#     if SKUItems.objects.filter(sku_serial_no=sno).count() > 0:
-#         generate_barcode()
-#     else:
-#         filename = "Barcode_{}.png".format(sno)
-#         filepath = "./media/barcode/{}".format(filename)
-        
-#         with open(filepath, "wb") as f:
-#             EAN13(sno.ean, writer=ImageWriter()).write(f)
-        
-#         return (sno.ean, filename)
+
+    filename = "{}.png".format(sno)
+    filepath = "./media/barcode/{}".format(filename)
+    
+    print(os.path.join(MEDIA_ROOT, filename))
+    # with open(filepath, "wb") as f:
+    #     EAN13(sno, writer=ImageWriter()).write(f)
+    
+    return (filepath)
 
 
 ## Logic Incomplete @ 

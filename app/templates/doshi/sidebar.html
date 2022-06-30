@@ -14,14 +14,23 @@ rel="stylesheet"
         <img src="{% static 'assets/img/doshi.png' %}" class="rounded" alt="Logo" style="width:180px;">
     </a>
     
-    {% comment %}
-    <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{% url 'index' %}">
-        <div class="sidebar-brand-icon rotate-n-15">
-            <i class="fas fa-laugh-wink"></i>
+    {% if request.session.role == 'CLIENT' or request.session.role == 'CLIENT_HCH' %}
+
+        <!-- Heading -->
+        <div class="sidebar-heading">
+            Interface
         </div>
-        <div class="sidebar-brand-text mx-3">Doshi Brothers</div>
-    </a>
-    {% endcomment %}
+
+        <!-- Divider -->
+        <hr class="sidebar-divider">
+
+        <!-- Nav Item - SKU Items-->
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'sku-items' %}">
+                <i class="fas fa-chart-bar"></i>
+                <span>SKU Items</span></a>
+        </li>
+    {% else %}
 
     <!-- Divider -->
     <hr class="sidebar-divider my-0">
@@ -29,8 +38,9 @@ rel="stylesheet"
     <!-- Nav Item - Dashboard -->
     <li class="nav-item active">
         <a class="nav-link" href="{% url 'index' %}">
-            <i class="fas fa-fw fa-tachometer-alt"></i>
+            <i class="fas fa-home"></i>
             <span>Dashboard</span></a>
+           
     </li>
 
     <!-- Divider -->
@@ -45,7 +55,7 @@ rel="stylesheet"
     <!-- Nav Item - Charts -->
     <li class="nav-item">
         <a class="nav-link" href="{% url 'sku-items' %}">
-            <i class="fas fa-fw fa-chart-area"></i>
+            <i class="fas fa-chart-bar"></i>
             <span>SKU Items</span></a>
     </li>
 
@@ -53,57 +63,27 @@ rel="stylesheet"
     <!-- Nav Item - Charts -->
     <li class="nav-item">
         <a class="nav-link" href="{% url 'invoices' %}">
-            <i class="fas fa-fw fa-table"></i>
+            <i class="fas fa-file-alt"></i>
             <span>Scan Invoice</span></a>
     </li>
 
-    {% comment %} <!-- Nav Item - Tables -->
-    <li class="nav-item"> 
-            <li class="nav-item ">
-                <a class=" nav-item nav-link">
-            <i class="fas fa-fw fa-table"></i>
-            <span>Invoices</span>
-        </a>
-        <ul style="list-style-type:none;">
-            <li class="nav-item ">
-                <a class="nav-link" href="{% url 'all-invoices' %}">
-                    <i class="fas fa-fw fa-table"></i>
-                    <span>All Invoice Details</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="{% url 'invoices' %}">
-                    <i class="fas fa-fw fa-table"></i>
-                    <span>Check Invoices</span></a>
-            </li>
-        </ul>
-    </li> 
-
-    <!-- Nav Item - Tables -->
-    <li class="nav-item">
-        <a class="nav-link" href="{% url 'barcodes' %}">
-            <i class='fas fa-barcode fa-border fa-3x'></i>
-            <span>Generate Barcodes</span></a>
-    </li> {% endcomment %}
 
     <!-- Nav Item - Tables -->
     <li class="nav-item">
         <a class="nav-link" href="{% url 'bypass-products' %}">
-            <i class="fas fa-angle-right"></i>
+            <i class="fas fa-reply"></i>
             <span>Bypassed Products</span></a>
     </li>
+{% endif %}
 
-    
-    <!-- Divider -->
-    <hr class="sidebar-divider d-none d-md-block">
+<!-- Divider -->
+<hr class="sidebar-divider d-none d-md-block">
 
-{% comment %}     
     <!-- Sidebar Toggler (Sidebar) -->
     <div class="text-center d-none d-md-inline">
         <button class="rounded-circle border-0" id="sidebarToggle"></button>
-    </div> {% endcomment %}
+    </div>
 
-    
 </ul>
 <!-- End of Sidebar -->
 
