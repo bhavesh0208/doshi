@@ -22,7 +22,7 @@ from django.contrib.auth.hashers import make_password, check_password
 def index(request):
     if 'id' in request.session:
         role = request.session['role']
-        if role in ['CLIENT_HCH', 'CLIENT']:
+        if role in ['CLIENT_HCH', 'CLIENT', 'DISPATCHER']:
             return redirect('sku-items')
         else:
             total_bypass_sku = ByPassModel.objects.filter(bypass_date=date.today()).count()
@@ -90,7 +90,7 @@ def login(request):
                         request.session['id'] = user.id
                         request.session['name'] = user.name
                         request.session['role'] = user.role
-                        if user.role in ['CLIENT_HCH', 'CLIENT']:
+                        if user.role in ['CLIENT_HCH', 'CLIENT', 'DISPATCHER']:
                             return redirect('sku-items')
                         else:
                             return redirect('index')
@@ -464,20 +464,23 @@ def generate_csv(request):
     response['Content-Disposition'] = 'attachment; filename="BypassData.csv"'
 
     writer = csv.writer(response)
-    writer.writerow(['Invoice_no', 'Bypass SKU Name', 'Bypass Against SKU Name', 'Bypass SKU Quantity', 'Bypass Datetime'])
+    writer.writerow(['Invoice_no', 'Bypass SKU Name', 'Bypass Against SKU Name', 'Bypass SKU Quantity', 'Bypass Date', 'Bypass Time'])
     
-    users = ByPassModel.objects.all().values_list('bypass_invoice_no__invoice_no', 'bypass_sku_name__sku_name',  'bypass_against_sku_name__sku_name', 'bypass_against_sku_name__sku_qty', 'bypass_datetime')
+
+    #users = ByPassModel.objects.all().values('bypass_invoice_no', 'bypass_sku_name__sku_name',  'bypass_against_sku_name__sku_name', 'bypass_against_sku_name__sku_qty', 'bypass_date', 'bypass_time')
+    users = ByPassModel.objects.all().values()
     print(users)
     for user in users:
-        writer.writerow(user)
+        
+        invoice_no = Invoice.objects.get(id=user['bypass_invoice_no_id']).invoice_no
+        bypass_sku_name = SKUItems.objects.get(id=user['bypass_sku_name_id']).sku_name
+        bypass_against_sku_name = SKUItems.objects.get(id= user['bypass_against_sku_name_id'])
+        bypass_sku_qty = bypass_against_sku_name.sku_qty
+        bypass_date = user['bypass_date'].strftime('%Y-%m-%d')
+        bypass_time = user['bypass_time'].strftime('%H:%M:%S')
+
+        print(invoice_no)
+        data = (invoice_no, bypass_sku_name, bypass_against_sku_name, bypass_sku_qty, bypass_date, bypass_time)
+        writer.writerow(data)
     
     return response
-
-
-def map_data(request):
-    with open('skudata.csv', mode='r') as infile:
-        reader = csv.reader(infile)
-        
-    with open('coors_new.csv', mode='w') as outfile:
-        writer = csv.writer(outfile)
-        mydict = {rows[0]:rows[1] for rows in reader}

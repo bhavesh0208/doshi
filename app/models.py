@@ -10,7 +10,7 @@ from django.contrib.auth.hashers import make_password
 
 class User(Model):
 
-    ROLES = (('ADMIN', 'Admin'),('EMPLOYEE', 'Employee'), ('CLIENT','Client'), ('CLIENT_HCH', 'Client_HCH'))
+    ROLES = (('ADMIN', 'Admin'),('EMPLOYEE', 'Employee'), ('CLIENT','Client'), ('CLIENT_HCH', 'Client_HCH'), ('DISPATCHER','Dispatcher'))
     name = CharField(validators=[validate_name], max_length=70, default="")
     email = EmailField(max_length=70, validators=[validate_email], unique=True, default="")
     contact = CharField(validators=[validate_contact], unique=True, max_length=10, default="")

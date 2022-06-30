@@ -66,15 +66,34 @@ class GenerateBRCode(Thread):
 
 
 def generate_BRC():
-    for each in SKUItems.objects.all():
-        filename = str(each.sku_serial_no)+".jpg"
-        filepath = settings.MEDIA_URL + filename
-        with open(filepath, "wb") as f:
-            EAN13(each.sku_serial_no, writer=ImageWriter()).write(f)
-        each.sku_barcode_image = filepath
-        each.save()
+    sku_list = SKUItems.objects.all()
+
+    for sku in sku_list:
+        filename =  generate_barcode(sku.sku_serial_no)
+        # filepath = os.path.join()
+        s3 = boto3.client('s3',  aws_access_key_id=settings.AWS_ACCESS_KEY_ID, aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY)
+        s3.upload_file(Filename=f"./media/barcode/{filename}",Bucket=settings.AWS_STORAGE_BUCKET_NAME,Key=f"{filename}")
+        
 
 
+
+import boto3
+
+def generate_barcode(sno=None):
+    if sno is None:
+        sno = EAN13(str(randint(100000000000, 999999999999)), writer=ImageWriter())
+    
+    filename = "{}.jpg".format(sno)
+    filepath = "./media/barcode/{}".format(filename)
+    
+    with open(filepath, "wb") as f:
+        EAN13(sno, writer=ImageWriter()).write(f)
+    
+
+    
+    return filename
+
+'''
 def generate_barcode(sno=None):
     # sno = EAN13(str(randint(100000000000, 999999999999)), writer=ImageWriter())
     
@@ -82,12 +101,12 @@ def generate_barcode(sno=None):
     filename = "{}.png".format(sno)
     filepath = "./media/barcode/{}".format(filename)
     
-    print(os.path.join(MEDIA_ROOT, filename))
-    # with open(filepath, "wb") as f:
-    #     EAN13(sno, writer=ImageWriter()).write(f)
+    print(os.path.join(settings.MEDIA_ROOT, filename))
+    with open(filepath, "wb") as f:
+        EAN13(sno, writer=ImageWriter()).write(f)
     
     return (filepath)
-
+'''
 
 ## Logic Incomplete @ 
 def zipBarcodes():
