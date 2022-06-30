@@ -222,6 +222,7 @@
                 <label for="sku-against-name" class="col-sm-2 col-form-label"
                   >ByPass SKU</label
                 >
+                <input type="hidden"   class="form-control" value={{pending_sku_names}} id="pending_sku_list" />
                 <div class="col-sm-10">
                   <select
                     class="form-control form-control-sm"
@@ -334,6 +335,8 @@
                 if (val["status"] === "success") {
                   location.reload();
                 } else if (val["status"] === "warning") {
+                  v = $("#pending_sku_list").val();
+                  console.log(v);
                   $("#OpenModal").click();
                   $("#sku-name").attr("value", val["sku-name"]);
                   $("#barcode").attr("value", barcode_no);

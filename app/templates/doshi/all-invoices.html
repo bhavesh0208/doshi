@@ -47,7 +47,7 @@
       <div id="content-wrapper" class="d-flex flex-column">
         <!-- Main Content -->
         <div id="content">
-          {% include 'doshi/topbar.html'  with heading="Invoices" %}
+          {% include 'doshi/topbar.html'  with heading="" %}
 
           <!-- Begin Page Content -->
           <div class="container-fluid">
@@ -78,14 +78,15 @@
                     </thead>
 
                     <tbody>
-                      {% for invoice in invoices %}
+                      {% for invoice, status in invoices %}
                       <tr>
                         <td>{{ forloop.counter }}</td>
                         <td>{{ invoice.invoice_no }}</td>
                         <td>{{ invoice.invoice_party_name }}</td>
                         <td>{{ invoice.invoice_date }}</td>
                         <td>{{ invoice.invoice_total_amount }}</td>
-                        {% if invoice.invoice_item_scanned_status %}
+                        
+                        {% if status %}
                         <td>
                           <h5>
                             <span class="badge rounded-pill badge-success"> Completed </span>

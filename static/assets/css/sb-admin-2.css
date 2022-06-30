@@ -51,7 +51,6 @@ html {
   font-family: sans-serif;
   line-height: 1.15;
   -webkit-text-size-adjust: 100%;
-  text-size-adjust: none;
   -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
 }
 
@@ -223,7 +222,7 @@ caption {
 
 th {
   text-align: inherit;
-  text-align: match-parent;
+  text-align: -webkit-match-parent;
 }
 
 label {
@@ -1837,7 +1836,6 @@ pre code {
   color: #6e707e;
   background-color: #fff;
   background-clip: padding-box;
-  -webkit-background-clip: padding-box;
   border: 1px solid #d1d3e2;
   border-radius: 0.35rem;
   transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
@@ -4492,8 +4490,7 @@ input[type="button"].btn-block {
   min-width: 0;
   word-wrap: break-word;
   background-color: #fff;
-  background-clip: border-box;4
-  -webkit-background-clip: 
+  background-clip: border-box;
   border: 1px solid #e3e6f0;
   border-radius: 0.35rem;
 }
@@ -5600,7 +5597,7 @@ a.close.disabled {
   max-width: 350px;
   font-size: 0.875rem;
   background-color: rgba(255, 255, 255, 0.85);
-  background-clip: padding-box; 
+  background-clip: padding-box;
   border: 1px solid rgba(0, 0, 0, 0.1);
   box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.1);
   opacity: 0;
@@ -5630,7 +5627,6 @@ a.close.disabled {
   padding: 0.25rem 0.75rem;
   color: #858796;
   background-color: rgba(255, 255, 255, 0.85);
-  -webkit-background-clip: padding-box;
   background-clip: padding-box;
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
   border-top-left-radius: calc(0.25rem - 1px);
@@ -10864,15 +10860,14 @@ a:focus {
   }
 }
 
-
 .bg-login-image {
-  background: url("https://unsplash.com/photos/BNBA1h-NgdY");
+  background: url("https://source.unsplash.com/K4mSJ7kc0As/600x800");
   background-position: center;
   background-size: cover;
 }
 
 .bg-register-image {
-  background: url("https://images.unsplash.com/photo-1553413077-190dd305871c?crop=entropy&cs=tinysrgb&fm=jpg&ixlib=rb-1.2.1&q=60&raw_url=true&ixid=MnwxMjA3fDB8MHxzZWFyY2h8MXx8d2FyZWhvdXNlfGVufDB8fDB8fA==&auto=format&fit=crop&w=500");
+  background: url("https://source.unsplash.com/Mv9hjnEUHR4/600x800");
   background-position: center;
   background-size: cover;
 }
