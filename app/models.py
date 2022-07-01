@@ -47,6 +47,12 @@ class SKUItems(Model):
 
 
 class Invoice(Model):
+    INVOICE_STATUS = (
+    ("PENDING", "Pending"),
+    ("COMPLETED", "Completed"),
+    ("EXTRA", "Extra"),
+    )
+
     invoice_no = CharField(max_length=200, default="")
     invoice_party_name = CharField(max_length=200, default="")
     invoice_sales_ledger = CharField(max_length=200, default="")
@@ -58,7 +64,7 @@ class Invoice(Model):
     invoice_item_total_scan = IntegerField(default=0.0)
     invoice_total_qty = IntegerField(default=0)
     invoice_total_amount = FloatField(default=0.0)
-    invoice_item_scanned_status = BooleanField(default=False)
+    invoice_item_scanned_status = CharField(default ="PENDING",choices=INVOICE_STATUS, max_length=100)
     invoice_user = ForeignKey(User, on_delete=DO_NOTHING, default=None, blank=True)    # user who created the invoice
     invoice_company = ForeignKey(Company, on_delete=DO_NOTHING, default=None, blank=True)
 

@@ -231,7 +231,7 @@ def sku_items(request):
 
 def invoice_status(invoice_no):
     status = False
-    all_obj = Invoice.objects.filter(invoice_no=invoice_no, invoice_item_scanned_status__in=[False])
+    all_obj = Invoice.objects.filter(invoice_no=invoice_no, invoice_item_scanned_status__in=['PENDING'])
     if all_obj.exists():
         status = False
     else:
@@ -247,7 +247,7 @@ def all_invoices(request):
             return redirect('sku-items')
         else:
 
-            invoices = Invoice.objects.filter(invoice_item_scanned_status__in=[False, True]).values('invoice_no', 'invoice_party_name', 'invoice_date', 'invoice_total_amount').distinct()
+            invoices = Invoice.objects.filter(invoice_item_scanned_status__in=['PENDING', 'COMPLETED', 'EXTRA']).values('invoice_no', 'invoice_party_name', 'invoice_date', 'invoice_total_amount').distinct()
             
 
             get_all_status = [ invoice_status(i['invoice_no']) for i in invoices ]

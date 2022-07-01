@@ -93,21 +93,6 @@ def generate_barcode(sno=None):
     
     return filename
 
-'''
-def generate_barcode(sno=None):
-    # sno = EAN13(str(randint(100000000000, 999999999999)), writer=ImageWriter())
-    
-
-    filename = "{}.png".format(sno)
-    filepath = "./media/barcode/{}".format(filename)
-    
-    print(os.path.join(settings.MEDIA_ROOT, filename))
-    with open(filepath, "wb") as f:
-        EAN13(sno, writer=ImageWriter()).write(f)
-    
-    return (filepath)
-'''
-
 ## Logic Incomplete @ 
 def zipBarcodes():
     sku_file_paths = SKUItems.objects.all().values_list('sku_barcode_image', flat=True)
