@@ -68,7 +68,7 @@
             <!-- DataTales Example -->
             <div class="card shadow mb-4">
               <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">Invoice List</h6>
+                <h6 class="m-0 font-weight-bold text-primary">Invoice List </h6>
               </div>
 
               
@@ -89,12 +89,15 @@
                         <th>Total Amount</th>
                         <th>Status</th>
                         <th>Action</th>
+                        {% if request.session.role == "ADMIN" %}
+                        <th>Dispatch</th>
+                        {% endif %}
                       </tr>
                     </thead>
 
                     <tbody>
                       {% for invoice in invoices %}
-                      <tr>
+                      <tr id="invoice-{{invoice.invoice_no}}">
                         <td>{{ forloop.counter }}</td>
                         <td>{{ invoice.invoice_no }}</td>
                         <td>{{ invoice.invoice_party_name }}</td>
@@ -116,12 +119,22 @@
                         
                         <td>
                           <a
-                            href="invoice-verify/{{invoice.invoice_no}}"
-                            class="btn btn-sm btn-info"
+                            href="{% url 'invoice-verify' invoice.invoice_no %}"
+                            class="btn btn-sm btn-info btn-block"
                             role="button"
                             >View</a
                           >
+                          
                         </td>
+                        {% if request.session.role == "ADMIN" %}
+                          <td>
+                            <button
+                              class="btn btn-sm btn-warning btn-block dispatch" data-invoice="{{ invoice.invoice_no }}"
+                              role="button"
+                              >Dispatch</a>
+                            
+                          </td>
+                        {% endif %}
                       </tr>
                       {% endfor %}
                     </tbody>
@@ -203,7 +216,37 @@
     <!-- Page level custom scripts -->
     <script src="{% static 'assets/js/demo/datatables-demo.js' %}"></script>
 
-    
+    <script>
+
+      $(".dispatch").click(function(){
+        var invoice_no = $(this).attr('data-invoice');
+        $.ajax({
+        type:"GET",
+        url: "{% url 'dispatch-invoice' %}",
+        data:{
+          "invoice_no": invoice_no
+        },
+        success: function(val){
+
+            if (val["status"] === "success")
+            {
+              console.log("helo");
+              //$('#invoice-'+invoice_no).remove();
+              location.reload();
+            }
+            else
+              {
+                const error_message = val['msg'];
+                var alert_element = `<div class=" m-3 alert alert-danger alert-dismissible fade show" id="error-alert" role="alert"> <strong>${error_message}</strong><button type="button" class="close" data-dismiss="alert" aria-label="Close"> <span aria-hidden="true">&times;</span></button></div>`;
+                  $(".container-fluid").before(alert_element);
+                }
+        }
+
+      })
+      
+      })
+    </script>
+
     <script>
       $(document).ready(function () {
         $("#invoiceDataTable").DataTable({

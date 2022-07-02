@@ -76,11 +76,13 @@
                       <tr>
                         <th>Sr.No.</th>
                         <th>SKU Name</th>
-                        <th>Total Quantity</th>
-                        <th>Stock Rate</th>
-                        <th>Total Amount</th>
+                        {% comment %} <th>Total Quantity</th> {% endcomment %}
+                        {% comment %} <th>Stock Rate</th>
+                        <th>Total Amount</th> {% endcomment %}
+                        <th>Package Quantity</th>
                         <th>Barcode No</th>
                         <th>Download Barcode</th>
+                        <th>Action</th>
                       </tr>
                     </thead>
 
@@ -89,9 +91,10 @@
                       <tr>
                         <td>{{ forloop.counter }}</td>
                         <td>{{ stk.sku_name }}</td>
-                        <td>{{ stk.sku_qty }}</td>
-                        <td>{{ stk.sku_rate }}</td>
-                        <td>{{ stk.sku_amount }}</td>
+                        {% comment %} <td>{{ stk.sku_qty }}</td> {% endcomment %}
+                        {% comment %} <td>{{ stk.sku_rate }}</td>
+                        <td>{{ stk.sku_amount }}</td> {% endcomment %}
+                        <td>{{ stk.sku_base_qty }}</td>
                         <td>{{ stk.sku_serial_no }}</td>
 
                         {% if stk.sku_barcode_image == None %}
@@ -117,6 +120,11 @@
                           >
                         </td>
                         {% endif %}
+                        <td>
+                          <button class="btn btn-outline-warning" data-toggle="modal" data-target="#updateModal-{{ forloop.counter }}" data-id="{{sku.id}}">
+                            Update
+                          </button>
+                        </td>
                       </tr>
                       {% endfor %}
                     </tbody>
@@ -142,10 +150,11 @@
       <i class="fas fa-angle-up"></i>
     </a>
 
-    <!-- Logout Modal-->
+    {% for i in sku_list %}
+    <!-- Update Modal-->
     <div
       class="modal fade"
-      id="logoutModal"
+      id="updateModal-{{forloop.counter}}"
       tabindex="-1"
       role="dialog"
       aria-labelledby="exampleModalLabel"
@@ -154,7 +163,7 @@
       <div class="modal-dialog" role="document">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title" id="exampleModalLabel">Ready to Leave?</h5>
+            <h5 class="modal-title" id="exampleModalLabel">Update SKU</h5>
             <button
               class="close"
               type="button"
@@ -165,21 +174,87 @@
             </button>
           </div>
           <div class="modal-body">
-            Select "Logout" below if you are ready to end your current session.
+            <form method="post" action="{% url 'update-sku' %}">
+
+              {% csrf_token %}
+              <div class="form-group row">
+                <div class="col-sm-10">
+                  <input
+                    type="text"
+                    class="form-control form-control-sm"
+                    name="update-sku-id"
+                    value="{{i.id}}"
+                    hidden
+                  />
+                </div>
+              
+              </div>
+              
+              <div class="form-group row">
+                <label for="sku-name" class="col-sm-2 col-form-label"
+                  >SKU
+                </label>
+                <div class="col-sm-10">
+                  <input
+                    type="text"
+                    class="form-control form-control-sm"
+          
+                    name="update-sku-name"
+                    value="{{i.sku_name}}"
+                  />
+                </div>
+              
+              </div>
+
+              <div class="form-group row">
+                <label for="sku-base-qty" class="col-sm-2 col-form-label"
+                  >Base Qty
+                </label>
+                <div class="col-sm-10">
+                  <input
+                    type="number"
+                    class="form-control form-control-sm"
+                  
+                    name="update-sku-qty"
+                    value="{{ i.sku_base_qty }}"
+                  />
+                </div>
+              </div>
+              <div class="form-group row">
+                <label for="sku-base-qty" class="col-sm-2 col-form-label"
+                  >Base Qty
+                </label>
+                <div class="col-sm-10">
+                  <input
+                    type="text"
+                    class="form-control form-control-sm"
+                  
+                    name="update-sku-srno"
+                    value="{{ i.sku_serial_no }}"
+                  />
+                </div>
+              </div>
+              <hr/>
+              <div class="form-group row ">
+                <div class="col-sm-10 ">
+                  <button
+                      class="btn btn-sm btn-secondary"
+                      type="button"
+                      data-dismiss="modal"
+                    >
+                    Cancel
+                  </button>
+                  <button class="btn btn-sm btn-primary" type="submit">Update</button>
+                </div>
+              </div>
+            
           </div>
-          <div class="modal-footer">
-            <button
-              class="btn btn-secondary"
-              type="button"
-              data-dismiss="modal"
-            >
-              Cancel
-            </button>
-            <a class="btn btn-primary" href="login.html">Logout</a>
-          </div>
+        </form>
+          
         </div>
       </div>
     </div>
+    {% endfor %}
 
     <!-- Bootstrap core JavaScript-->
     <script src="{% static 'assets/vendor/bootstrap/js/bootstrap.bundle.min.js ' %}"></script>

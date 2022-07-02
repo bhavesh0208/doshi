@@ -69,12 +69,15 @@ def generate_BRC():
     sku_list = SKUItems.objects.all()
 
     for sku in sku_list:
-        filename =  generate_barcode(sku.sku_serial_no)
+        # filename =  generate_barcode(sku.sku_serial_no)
+        filepath = "{}.jpg".format(sku.sku_serial_no)
         # filepath = os.path.join()
-        s3 = boto3.client('s3',  aws_access_key_id=settings.AWS_ACCESS_KEY_ID, aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY)
-        s3.upload_file(Filename=f"./media/barcode/{filename}",Bucket=settings.AWS_STORAGE_BUCKET_NAME,Key=f"{filename}")
+        # s3 = boto3.client('s3',  aws_access_key_id=settings.AWS_ACCESS_KEY_ID, aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY)
+        # s3.upload_file(Filename=f"./media/barcode/{filename}",Bucket=settings.AWS_STORAGE_BUCKET_NAME,Key=f"{filename}")
         
-
+        sku.sku_barcode_image = os.path.join(settings.MEDIA_ROOT, filepath)
+        print(sku.sku_barcode_image)
+        sku.save()
 
 
 import boto3
@@ -103,6 +106,7 @@ def zipBarcodes():
             elif image_path is not None :
                 archive.write(os.path.join(settings.MEDIA_ROOT, image_path), arcname=os.path.basename(image_path))
         # print(archive.namelist())
+
 
 def sendEmailReport():
     """ send email to every user in database """
@@ -134,7 +138,6 @@ def sendEmailReport():
         print("Error in sendEmailReport")
 
     
-
 def startSchedular():
     """Create a BackgroundScheduler, and set the daemon parameter to True. This allows us to kill the thread when we exit the DJANGO application."""
     try:

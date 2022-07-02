@@ -114,7 +114,9 @@
                         <th>SKU Item Rate</th>
                         <th>SKU Item Amount</th>
                         <th>Barcode</th>
+                        <th>Action</th>
                         <th>Status</th>
+                        
                       </tr>
                     </thead>
 
@@ -129,7 +131,8 @@
                         <td>{{ stk.invoice_item_rate }}</td>
                         <td>{{ stk.invoice_item_amount }}</td>
                         <td>{{ srno.sku_serial_no }}</td>
-                        {% if stk.invoice_item_scanned_status %}
+                        <td><button class="btn btn-sm btn-warning btn-block">Edit</button></td>
+                        {% if stk.invoice_item_scanned_status == "COMPLETED" %}
                         <td>
                           <h5>
                             <span class="badge rounded-pill badge-success"
@@ -137,7 +140,7 @@
                             >
                           </h5>
                         </td>
-                        {% else %}
+                        {% elif stk.invoice_item_scanned_status == "PENDING" %}
                         <td>
                           <h5>
                             <span class="badge rounded-pill badge-danger"
@@ -169,6 +172,7 @@
     <a class="scroll-to-top rounded" href="#page-top">
       <i class="fas fa-angle-up"></i>
     </a>
+
 
     <!-- warningModal Modal-->
     <div class="modal fade" id="warningModal">

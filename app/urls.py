@@ -13,11 +13,15 @@ urlpatterns = [
     path('sku-items/', sku_items, name='sku-items'),
     path('invoices/', invoices, name='invoices'),
     path('all-invoices/', all_invoices, name='all-invoices'),
-    path('invoices/invoice-verify/<int:invoice_no>', invoice_verify, name='invoice-verify'),
-    path('all-invoices/invoice-details/<int:invoice_no>', invoice_details, name='invoice-details'),
+    path('invoices/invoice-verify/<invoice_no>', invoice_verify, name='invoice-verify'),
+    path('invoices/dispatch-invoice', dispatchInvoice, name="dispatch-invoice"),
+    path('all-invoices/invoice-details/<str:invoice_no>', invoice_details, name='invoice-details'),
     # path('barcodes/', barcodes, name='barcodes'),
     path('bypass-products/', bypassProducts, name='bypass-products'),
     path('verify-invoice', verifyInvoice, name="verify-invoice"),
     path('bypass-invoice', bypassInvoice, name="bypass-invoice"),
     path('generate-csv/', generate_csv, name='generate-csv'),
+    path('update-scan-qty/', update_scan_qty, name="update-scan-qty"),
+    path('sku-items/update-sku', update_sku, name='update-sku')
+    
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

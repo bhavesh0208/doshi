@@ -15,6 +15,7 @@ from django.urls import reverse
 from datetime import datetime, date
 import csv
 from django.contrib.auth.hashers import make_password, check_password
+from django.core.paginator import Paginator
 
 
 # Create your views here.
@@ -26,9 +27,9 @@ def index(request):
             return redirect('sku-items')
         else:
             total_bypass_sku = ByPassModel.objects.filter(bypass_date=date.today()).count()
-            total_sales = sum([float(i['invoice_item_amount']) for i in Invoice.objects.filter(invoice_item_scanned_status__in=[True]).values('invoice_item_amount')])
+            total_sales = sum([float(i['invoice_item_amount']) for i in Invoice.objects.filter(invoice_item_scanned_status='PENDING').values('invoice_item_amount')])
             total_sku_rate = round(sum([float(i['sku_rate']) for i in SKUItems.objects.all().values('sku_rate')]), 2)
-            total_pending_invoices = Invoice.objects.filter(invoice_item_scanned_status__in=[False]).values('invoice_no')
+            total_pending_invoices = Invoice.objects.filter(invoice_item_scanned_status='PENDING').values('invoice_no')
             inv = len(set([i['invoice_no'] for i in total_pending_invoices]))
 
             return render(request, 'doshi/index.html', {'total_bypass_sku': total_bypass_sku, 'total_sales': total_sales,
@@ -174,17 +175,6 @@ def reset_password(request):
             get_user.save()
             del request.session['r-p']
             return redirect('login')
-        # try:
-        #     password = request.POST['ResetPassword']
-        #     print(password)
-        #     get_user = User.objects.get(email=request.session['email'])
-        #     get_user.password = password
-        #     get_user.save()
-        #     del request.session['r-p']
-        #     return redirect('login')
-        # except Exception as e:
-        #     messages.error(request, e)
-        #     return redirect('reset-password')
 
     if 'r-p' in request.session:
         return render(request, 'doshi/reset-password.html')
@@ -196,7 +186,6 @@ def sku_items(request):
     try:
         if 'id' in request.session:
             role = request.session['role']
-            print(role)
             if role == 'CLIENT_HCH':
                 sku_list = SKUItems.objects.filter(sku_name__contains='HCH')
             else:
@@ -209,33 +198,16 @@ def sku_items(request):
         print("Exception is : ", e)
         return redirect('index')
 
-# def sku_items(request):
-    
-#     if 'id' in request.session:
-#         sku_list = SKUItems.objects.exclude(sku_serial_no__in=[None]).filter(sku_status__in=[True], sku_qty__gte=10) # remove
-#         print(f"SKU LIST : {sku_list}")
-#         # generate barcode if not exists
-#         generate_barcode_list = SKUItems.objects.filter(sku_serial_no = None)
-#         if generate_barcode_list.exists():
-#             for sku in generate_barcode_list:
-#                 sno, filename = generate_barcode()
-#                 sku.sku_serial_no = sno
-#                 sku.sku_barcode_image = os.path.join('barcode/', filename)
-#                 sku.save() 
-
-#             # GenerateBRCode().start()
-#         # zipBarcodes()
-#         return render(request,'doshi/sku-list.html', {'sku_list': sku_list})
-#     return redirect('index')
-
-
 def invoice_status(invoice_no):
-    status = False
-    all_obj = Invoice.objects.filter(invoice_no=invoice_no, invoice_item_scanned_status__in=['PENDING'])
+    status = 'PENDING'
+    all_obj = Invoice.objects.filter(invoice_no=invoice_no, invoice_item_scanned_status='PENDING')
+    extra_obj = Invoice.objects.filter(invoice_no=invoice_no, invoice_item_scanned_status='EXTRA')
     if all_obj.exists():
-        status = False
+        status = 'PENDING'
+    elif extra_obj.exists():
+        status = 'EXTRA'
     else:
-        status = True
+        status = 'COMPLETED'
 
     return status
     
@@ -247,14 +219,10 @@ def all_invoices(request):
             return redirect('sku-items')
         else:
 
-            invoices = Invoice.objects.filter(invoice_item_scanned_status__in=['PENDING', 'COMPLETED', 'EXTRA']).values('invoice_no', 'invoice_party_name', 'invoice_date', 'invoice_total_amount').distinct()
+            invoices = Invoice.objects.all().values('invoice_no', 'invoice_party_name', 'invoice_date', 'invoice_total_amount').distinct()
             
-
             get_all_status = [ invoice_status(i['invoice_no']) for i in invoices ]
             data = zip(invoices, get_all_status)
-            print(data)
-
-            #print(get_all_status)
             return render(request, 'doshi/all-invoices.html', {'invoices': data, 'get_all_status': get_all_status })
 
     return redirect('login')
@@ -267,7 +235,7 @@ def invoices(request):
             return redirect('sku-items')
         else:
 
-            invoices = Invoice.objects.filter(invoice_item_scanned_status__in=[False]).values('invoice_no', 'invoice_party_name', 'invoice_date', 'invoice_total_amount').distinct()
+            invoices = Invoice.objects.filter(invoice_item_scanned_status='PENDING').values('invoice_no', 'invoice_party_name', 'invoice_date', 'invoice_total_amount').distinct()
             
             return render(request, 'doshi/invoices.html', {'invoices': invoices})
 
@@ -304,7 +272,7 @@ def invoice_verify(request, invoice_no):
 
     invoice_sku_list = Invoice.objects.filter(invoice_no=str(invoice_no))
     
-    invoice_pending_sku_list = Invoice.objects.filter(invoice_no=invoice_no, invoice_item_scanned_status__in=[False]) #, invoice_item_scanned_status__in=[False])
+    invoice_pending_sku_list = Invoice.objects.filter(invoice_no=invoice_no, invoice_item_scanned_status='PENDING')
     
     pending_invoice_barcode_list = [i.invoice_item_id for i in invoice_pending_sku_list]
     pending_sku_names = SKUItems.objects.filter(id__in=pending_invoice_barcode_list).values('sku_name','sku_serial_no')
@@ -351,21 +319,20 @@ def verifyInvoice(request):
 
                 print(f"GET INVOICE ITEM : {get_invoice_item}")
                 
-                if not get_invoice_item[0].invoice_item_scanned_status:
+                if get_invoice_item[0].invoice_item_scanned_status == "PENDING":
                     # get_invoice_item.update(invoice_item_total_scan = F('invoice_item_total_scan') + 1)
-                    sample = get_invoice_item[0].invoice_item_total_scan + 1
+                    sample = get_invoice_item[0].invoice_item_total_scan + get_sku.sku_base_qty
                     get_invoice_item.update(invoice_item_total_scan = sample)
 
-                    # get_sku.sku_qty -= 1
-                    # get_sku.save()
-                    
 
                     print(get_invoice_item[0].invoice_item_total_scan, get_invoice_item[0].invoice_item_qty, type(get_invoice_item[0].invoice_item_total_scan),type(get_invoice_item[0].invoice_item_qty))
                     print(int(get_invoice_item[0].invoice_item_total_scan) == int(get_invoice_item[0].invoice_item_qty))
 
                     if int(get_invoice_item[0].invoice_item_total_scan) == int(get_invoice_item[0].invoice_item_qty):
                         print(get_invoice_item)
-                        get_invoice_item.update(invoice_item_scanned_status=True)
+                        get_invoice_item.update(invoice_item_scanned_status="COMPLETED")
+                    elif int(get_invoice_item[0].invoice_item_total_scan) > int(get_invoice_item[0].invoice_item_qty):
+                        get_invoice_item.update(invoice_item_scanned_status="EXTRA")
             
                 else:
 
@@ -422,17 +389,16 @@ def bypassInvoice(request):
             invoice_obj = Invoice.objects.filter(invoice_no=invoice_no, invoice_item_id=sku_against_name_obj)
             print(invoice_obj)
 
-            if not invoice_obj[0].invoice_item_scanned_status:
-                sample = invoice_obj[0].invoice_item_total_scan + 1
+            if invoice_obj[0].invoice_item_scanned_status == "PENDING":
+                sample = invoice_obj[0].invoice_item_total_scan + sku_name_obj.sku_base_qty
                 invoice_obj.update(invoice_item_total_scan = sample)
-
-                # sku_name_obj.sku_qty -= 1
-                # sku_name_obj.save()
-
+                
 
                 if int(invoice_obj[0].invoice_item_total_scan) == int(invoice_obj[0].invoice_item_qty):
-                    invoice_obj.update(invoice_item_scanned_status=True) # , invoice_user=request.session['id'])
-                    
+                    invoice_obj.update(invoice_item_scanned_status="COMPLETED") # , invoice_user=request.session['id'])
+                elif int(invoice_obj[0].invoice_item_total_scan) == int(invoice_obj[0].invoice_item_qty):
+                    invoice_obj.update(invoice_item_scanned_status="EXTRA") # , invoice_user=request.session['id'])
+
                     # ByPassModel.objects.create(bypass_invoice_no=invoice_obj[0], bypass_sku_name=sku_name_obj, bypass_against_sku_name=sku_against_name_obj)
             else:
                 raise Exception('S.K.U. scanning already completed')
@@ -484,3 +450,48 @@ def generate_csv(request):
         writer.writerow(data)
     
     return response
+
+
+def update_scan_qty(request):
+    pass
+
+
+def dispatchInvoice(request):
+    if 'id' in request.session:
+        try:
+            if request.is_ajax:
+                invoice_no = request.GET.get('invoice_no', None)
+                invoice_sku_list = Invoice.objects.filter(invoice_no=invoice_no)
+                for item in invoice_sku_list:
+                    item.invoice_item_scanned_status = "COMPLETED"
+                    item.save()
+                return JsonResponse({
+                    "status": "success",
+                    "msg": f"{invoice_no} dispatched successfully."
+                })
+        except Exception as e:
+            JsonResponse({
+                "status":"error",
+                "msg": e
+            })
+
+    
+def update_sku(request):
+    if 'id' in request.session:
+        try:
+            print(request.method)
+            if request.method == "POST":
+                sku_id = request.POST['update-sku-id']
+                sku_name = request.POST['update-sku-name']
+                sku_base_qty = request.POST['update-sku-qty']
+                sku_serial_no = request.POST['update-sku-srno']
+                sku_item = SKUItems.objects.get(id=sku_id)
+                print(sku_id, sku_name)
+                sku_item.sku_name = sku_name
+                sku_item.sku_base_qty = sku_base_qty
+                sku_item.sku_serial_no = sku_serial_no
+                sku_item.save()
+                return redirect('sku-items')
+        except Exception as e:
+                return HTTPResponse(e)
+    return JsonResponse({"HEllo": "World"})

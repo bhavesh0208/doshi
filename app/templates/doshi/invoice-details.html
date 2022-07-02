@@ -94,10 +94,16 @@
                         <td>{{ stk.invoice_item_amount }}</td>
                         {% comment %} <td>{{ srno.sku_serial_no }}</td> {% endcomment %}
                         
-                        {% if stk.invoice_item_scanned_status %}
+                        {% if stk.invoice_item_scanned_status == "COMPLETED" %}
                         <td>
                           <h5>
                             <span class="badge rounded-pill badge-success">Completed</span>
+                          </h5>
+                        </td>
+                        {% elif stk.invoice_item_scanned_status == "EXTRA" %}
+                        <td>
+                          <h5>
+                            <span class="badge rounded-pill badge-warning">Extra</span>
                           </h5>
                         </td>
                         {% else %}
@@ -106,6 +112,7 @@
                             <span class="badge rounded-pill badge-danger">Pending</span>
                           </h5>
                         </td>
+
                         {% endif %}
                         
                       </tr>

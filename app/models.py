@@ -10,7 +10,7 @@ from django.contrib.auth.hashers import make_password
 
 class User(Model):
 
-    ROLES = (('ADMIN', 'Admin'),('EMPLOYEE', 'Employee'), ('CLIENT','Client'), ('CLIENT_HCH', 'Client_HCH'), ('DISPATCHER','Dispatcher'))
+    ROLES = (('ADMIN', 'Admin'),('EMPLOYEE', 'Employee'), ('CLIENT','Client'), ('CLIENT_HCH', 'Client_HCH'))
     name = CharField(validators=[validate_name], max_length=70, default="")
     email = EmailField(max_length=70, validators=[validate_email], unique=True, default="")
     contact = CharField(validators=[validate_contact], unique=True, max_length=10, default="")
@@ -47,12 +47,11 @@ class SKUItems(Model):
 
 
 class Invoice(Model):
-    INVOICE_STATUS = (
-    ("PENDING", "Pending"),
-    ("COMPLETED", "Completed"),
-    ("EXTRA", "Extra"),
+    INVOICE_ITEM_STATUS = (
+        ("PENDING", "Pending"),
+        ("COMPLETED", "Completed"),
+        ("EXTRA", "Extra")
     )
-
     invoice_no = CharField(max_length=200, default="")
     invoice_party_name = CharField(max_length=200, default="")
     invoice_sales_ledger = CharField(max_length=200, default="")
@@ -64,7 +63,7 @@ class Invoice(Model):
     invoice_item_total_scan = IntegerField(default=0.0)
     invoice_total_qty = IntegerField(default=0)
     invoice_total_amount = FloatField(default=0.0)
-    invoice_item_scanned_status = CharField(default ="PENDING",choices=INVOICE_STATUS, max_length=100)
+    invoice_item_scanned_status = CharField(max_length=30, choices=INVOICE_ITEM_STATUS, default="PENDING")
     invoice_user = ForeignKey(User, on_delete=DO_NOTHING, default=None, blank=True)    # user who created the invoice
     invoice_company = ForeignKey(Company, on_delete=DO_NOTHING, default=None, blank=True)
 
