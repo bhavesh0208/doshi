@@ -16,7 +16,6 @@ urlpatterns = [
     path('invoices/invoice-verify/<invoice_no>', invoice_verify, name='invoice-verify'),
     path('invoices/dispatch-invoice', dispatchInvoice, name="dispatch-invoice"),
     path('all-invoices/invoice-details/<str:invoice_no>', invoice_details, name='invoice-details'),
-    # path('barcodes/', barcodes, name='barcodes'),
     path('bypass-products/', bypassProducts, name='bypass-products'),
     path('verify-invoice', verifyInvoice, name="verify-invoice"),
     path('bypass-invoice', bypassInvoice, name="bypass-invoice"),
