@@ -123,11 +123,11 @@
 
                     <tbody id="stockDataTable">
                       {% for stk, srno in invoice_sku_list %}
-                      <tr>
+                      <tr  id="{{stk.invoice_item_id}}">
                         <td>{{ forloop.counter }}</td>
-                        <td id="{{stk.invoice_item_id}}">{{ srno.sku_name }}</td>
+                        <td>{{ srno.sku_name }}</td>
                         <td>
-                          {{ stk.invoice_item_total_scan }} / {{ stk.invoice_item_qty }}
+                          <span contenteditable="false">{{ stk.invoice_item_total_scan }}</span>/{{ stk.invoice_item_qty }}
                         </td>
                         {% comment %} <td>{{ stk.invoice_item_rate }}</td>
                         <td>{{ stk.invoice_item_amount }}</td> {% endcomment %}
@@ -157,7 +157,7 @@
                           </h6>
                         </td>
                         {% endif %}
-                        <td><button class="btn btn-sm btn-warning btn-block">Edit</button></td>
+                        <td><button class="btn btn-sm btn-warning btn-block edit" data-invoice-item-id="{{ stk.invoice_item_id }}" data-total-scan="{{ stk.invoice_item_total_scan }}">Edit</button></td>
                       </tr>
                       {% endfor %}
                     </tbody>
@@ -305,6 +305,16 @@
           ],
         });
       });
+    </script>
+
+    <script>
+      $('.edit').click(function(){
+        var invoice_item_id = $(this).attr('data-invoice-item-id');
+        $('#scan-' + invoice_item_id).attr("contenteditable", "true");
+        var invoice_item_total_scan = $("#scan-" + invoice_item_id).html();
+        console.log(invoice_item_total_scan, invoice_item_id);
+        $('#scan-' + invoice_item_id).attr("contenteditable", "false");
+      })
     </script>
 
     <script>

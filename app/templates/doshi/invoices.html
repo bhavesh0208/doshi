@@ -49,6 +49,7 @@
         <div id="content">
           {% include 'doshi/topbar.html'  with heading="" %}
 
+          
           <!-- Begin Page Content -->
           <div class="container-fluid">
 
@@ -129,7 +130,7 @@
                         {% if request.session.role == "ADMIN" %}
                           <td>
                             <button
-                              class="btn btn-sm btn-warning btn-block dispatch" data-invoice="{{ invoice.invoice_no }}"
+                              class="btn btn-sm btn-success btn-block dispatch" data-invoice="{{ invoice.invoice_no }}"
                               role="button"
                               >Dispatch</a>
                             
@@ -230,8 +231,12 @@
 
             if (val["status"] === "success")
             {
-              console.log("helo");
-              //$('#invoice-'+invoice_no).remove();
+              // console.log("helo");
+              const success_message = val['msg'];
+              var alert_element = `<div class=" m-3 alert alert-success alert-dismissible fade show" id="error-alert" role="alert"> <strong>${success_message}</strong><button type="button" class="close" data-dismiss="alert" aria-label="Close"> <span aria-hidden="true">&times;</span></button></div>`;
+                $(".container-fluid").before(alert_element);
+
+              // $('#invoice-'+invoice_no).remove();
               location.reload();
             }
             else
@@ -239,7 +244,8 @@
                 const error_message = val['msg'];
                 var alert_element = `<div class=" m-3 alert alert-danger alert-dismissible fade show" id="error-alert" role="alert"> <strong>${error_message}</strong><button type="button" class="close" data-dismiss="alert" aria-label="Close"> <span aria-hidden="true">&times;</span></button></div>`;
                   $(".container-fluid").before(alert_element);
-                }
+
+              }
         }
 
       })
