@@ -11,7 +11,7 @@
     <meta name="description" content="" />
     <meta name="author" content="" />
 
-    <title>Doshi Brothers | SKU </title>
+    <title>Doshi Brothers | S.K.U. </title>
 
     <!-- Custom fonts for this template -->
     <link
@@ -54,7 +54,7 @@
             <!-- DataTales Example -->
             <div class="card shadow mb-4">
               <div class="card-header d-sm-flex align-items-center justify-content-between mb-4">
-                <h6 class="mb-0 font-weight-bold text-primary">SKU List</h6>
+                <h6 class="mb-0 font-weight-bold text-primary">S.K.U. List</h6>
               
               <a
                 href="/media/AllBarcodes.zip"
@@ -74,15 +74,20 @@
                   >
                     <thead class="thead-dark">
                       <tr>
+                        
                         <th>Sr.No.</th>
-                        <th>SKU Name</th>
+                        <th>S.K.U. Name</th>
                         {% comment %} <th>Total Quantity</th> {% endcomment %}
                         {% comment %} <th>Stock Rate</th>
                         <th>Total Amount</th> {% endcomment %}
+                        {% if request.session.role == "ADMIN" or request.session.role == "DISPATCHER" %}
                         <th>Package Quantity</th>
+                        {% endif %}
                         <th>Barcode No</th>
                         <th>Download Barcode</th>
+                        {% if request.session.role == "ADMIN" %}
                         <th>Action</th>
+                        {% endif %}
                       </tr>
                     </thead>
 
@@ -94,7 +99,9 @@
                         {% comment %} <td>{{ stk.sku_qty }}</td> {% endcomment %}
                         {% comment %} <td>{{ stk.sku_rate }}</td>
                         <td>{{ stk.sku_amount }}</td> {% endcomment %}
+                        {% if request.session.role == "ADMIN" or request.session.role == "DISPATCHER" %}
                         <td>{{ stk.sku_base_qty }}</td>
+                        {% endif %}
                         <td>{{ stk.sku_serial_no }}</td>
 
                         {% if stk.sku_barcode_image == None %}
@@ -120,11 +127,15 @@
                           >
                         </td>
                         {% endif %}
+
+                        {% if request.session.role == "ADMIN" %}
                         <td>
                           <button class="btn btn-sm btn-outline-warning" data-toggle="modal" data-target="#updateModal-{{ forloop.counter }}" data-id="{{sku.id}}">
                             Update
                           </button>
                         </td>
+                        {% endif %}
+
                       </tr>
                       {% endfor %}
                     </tbody>
@@ -163,7 +174,7 @@
       <div class="modal-dialog" role="document">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title" id="exampleModalLabel">Update SKU</h5>
+            <h5 class="modal-title" id="exampleModalLabel">Update S.K.U.</h5>
             <button
               class="close"
               type="button"
@@ -192,7 +203,7 @@
               
               <div class="form-group row">
                 <label for="sku-name" class="col-sm-2 col-form-label"
-                  >SKU
+                  >S.K.U.
                 </label>
                 <div class="col-sm-10">
                   <input

@@ -95,7 +95,7 @@ def generate_barcode(sno=None):
 
 
 ## Logic Incomplete @
-def zipBarcodes():
+def zipBarcodes(role):
     sku_file_paths = SKUItems.objects.all().values_list("sku_barcode_image", flat=True)
     with ZipFile("./media/AllBarcodes.zip", "w") as archive:
         for image_path in sku_file_paths:
