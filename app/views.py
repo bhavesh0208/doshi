@@ -1,3 +1,4 @@
+from email.message import Message
 from logging import raiseExceptions
 from urllib import response
 from django.shortcuts import render, redirect
@@ -298,8 +299,14 @@ def invoices(request):
                 )
                 .distinct()
             )
+            get_all_status = [invoice_status(i["invoice_no"]) for i in invoices]
+            bypass_data = zip(invoices, get_all_status)
 
-            return render(request, "doshi/invoices.html", {"invoices": invoices})
+            return render(
+                request,
+                "doshi/invoices.html",
+                {"invoices": bypass_data, "get_all_status": get_all_status},
+            )
 
     return redirect("login")
 
@@ -559,21 +566,43 @@ def generate_csv(request):
     return response
 
 
-def update_scan_qty(request):
+# Rework on  this logic -> need to improve
+def update_scan_qty(request, invoice_no):
     if "id" in request.session:
         try:
             if request.method == "POST":
-                invoice_no = request.POST["invoice-no"]
+                get_invoice_no = invoice_no
                 invoice_item_total_scan = request.POST["invoice-item-total-scan"]
-                invoice_item_name = request.POST["invoice-item-name"]
-
-                sku_id = SKUItems.objects.filter(sku_name=invoice_item_name)
-                data = Invoice.objects.filter(
-                    invoice_no=invoice_no, invoice_item_id=sku_id
+                invoice_item_barcode = request.POST["invoice-barcode"]
+                print(invoice_item_total_scan, get_invoice_no)
+                sku_id = SKUItems.objects.get(sku_serial_no=invoice_item_barcode)
+                print(sku_id)
+                invoice_obj = Invoice.objects.filter(
+                    invoice_no=get_invoice_no, invoice_item_id=sku_id.id
                 )
-                print(data, sku_id, invoice_item_name, invoice_item_total_scan)
+                print(sku_id, invoice_item_barcode, invoice_item_total_scan)
+                invoice_obj.update(invoice_item_total_scan=invoice_item_total_scan)
+
+                if int(invoice_obj[0].invoice_item_total_scan) == int(
+                    invoice_obj[0].invoice_item_qty
+                ):
+                    invoice_obj.update(invoice_item_scanned_status="COMPLETED")
+                elif int(invoice_obj[0].invoice_item_total_scan) > int(
+                    invoice_obj[0].invoice_item_qty
+                ):
+                    invoice_obj.update(invoice_item_scanned_status="EXTRA")
+                else:
+                    invoice_obj.update(invoice_item_scanned_status="PENDING")
+
+                return redirect("invoice-verify", invoice_no=get_invoice_no)
+        except SKUItems.DoesNotExist:
+            print("S.K.U. does not exists")
+            messages.error(request, "Invalid Barcode")
+            return redirect("invoice-verify", invoice_no=get_invoice_no)
         except Exception as e:
-            pass
+            print("Error - ", e)
+            messages.error(request, e)
+            return redirect("invoice-verify", invoice_no=get_invoice_no)
 
 
 def dispatch_invoice(request):

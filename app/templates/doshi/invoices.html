@@ -97,30 +97,36 @@
                     </thead>
 
                     <tbody>
-                      {% for invoice in invoices %}
+                      {% for invoice, status in invoices %}
                       <tr id="invoice-{{invoice.invoice_no}}">
                         <td>{{ forloop.counter }}</td>
                         <td>{{ invoice.invoice_no }}</td>
                         <td>{{ invoice.invoice_party_name }}</td>
                         <td>{{ invoice.invoice_date }}</td>
                         <td>{{ invoice.invoice_total_amount }}</td>
-                        {% if invoice.invoice_item_scanned_status %}
+                        {% if status == "COMPLETED" %}
                         <td>
                           <h6>
                             <span class="badge rounded-pill badge-success">Completed</span>
                           </h6>
                         </td>
-                        {% else %}
+                        {% elif status == "PENDING" %}
                         <td>
                           <h6>
                             <span class="badge rounded-pill badge-danger">Pending</span>
+                          </h6>
+                        </td>
+                        {% else %}
+                        <td>
+                          <h6>
+                            <span class="badge rounded-pill badge-warning">Extra</span>
                           </h6>
                         </td>
                         {% endif %}
                         
                         <td>
                           <a
-                            href="{% url 'invoice-verify' invoice.invoice_no %}"
+                            href="invoice-verify/{{invoice.invoice_no }}"
                             class="btn btn-sm btn-outline-info btn-block"
                             role="button"
                             >View</a
