@@ -36,7 +36,7 @@
       rel="stylesheet"
     />
   </head>
-
+  <!--TODO: Remove JS and put it into seperate folder-->
   <body id="page-top">
     <!-- Page Wrapper -->
     <div id="wrapper">
@@ -123,15 +123,15 @@
 
                     <tbody id="stockDataTable">
                       {% for stk, srno in invoice_sku_list %}
-                      <tr  id="{{ stk.invoice_item_id }}">
+                      <tr id="{{ stk.invoice_item_id }}">
                         <td>{{ forloop.counter }}</td>
                         <td>{{ srno.sku_name }}</td>
                         <td>
-                          <span style="color:blue">{{ stk.invoice_item_total_scan }}</span>/{{ stk.invoice_item_qty }}
+                          <span id="tscan" class="{{stk.invoice_item_id}}" style="color:blue">{{ stk.invoice_item_total_scan }}</span>/{{ stk.invoice_item_qty }}
                         </td>
                         {% comment %} <td>{{ stk.invoice_item_rate }}</td>
                         <td>{{ stk.invoice_item_amount }}</td> {% endcomment %}
-                        <td>{{ srno.sku_serial_no }}</td>
+                        <td id="">{{ srno.sku_serial_no }}</td>
                         {% if stk.invoice_item_scanned_status == "COMPLETED" %}
                         <td>
                           <h6>
@@ -368,24 +368,26 @@
 
     <script>
       $(document).ready(function (val) {
+        // console.log("hello");
         $("#barcodeInput").focus();
         $("#barcodeInput").on("input", function (e) {
           //Fetch form to apply custom Bootstrap validation
           $("#barcodeInput").removeClass("is-invalid");
-          $("#validationServer03Feedback").html("Please enter valid 13 digit barcode number");
           $("#error-alert").remove();
 
           var form = $("#needs-validation");
 
           // post data for server
-          var check_sku = $("#1").text();
+          //var check_sku = $("#1").text();
           var barcode_no = $(this).val().trim();
+          // TODO: Replace input hidden with variable
           var invoice_no = $("#invoice-no").val();
 
 
           if (!form[0].checkValidity()) {
             e.preventDefault();
             e.stopPropagation();
+            // TODO: Remove all console.log
             console.log("Not going anywhere....")
           }
           else
@@ -394,17 +396,23 @@
 
             $.ajax({
               type: "POST",
-              url: "{% url "verify-invoice" %}",
+              url: "{% url 'verify-invoice' %}",
               data: {
                 "invoice": invoice_no,
                 "barcode": barcode_no,
-                "check-sku": check_sku,
+                // TODO: Remove check sku logic
+                //"check-sku": check_sku,
                 "csrfmiddlewaretoken": $("input[name=csrfmiddlewaretoken]").val(),
               },
               success: function (val) {
-                console.log(val);
                 if (val["status"] === "success") {
                   location.reload();
+                  //console.log(val);
+                  
+                  // delete the row with barcode id
+                  // append row with new data
+                  // clear searchbar field
+                  
                 } else if (val["status"] === "warning") {
                   v = $("#pending_sku_list").val();
                   console.log(v);
