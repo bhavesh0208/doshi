@@ -23,7 +23,11 @@ urlpatterns = [
     path("bypass-products/", bypass_products, name="bypass-products"),
     path("verify-invoice", verify_invoice, name="verify-invoice"),
     path("bypass-invoice", bypass_invoice, name="bypass-invoice"),
-    path("generate-csv/", generate_csv, name="generate-csv"),
+    path("generate-csv-bypass/", generate_csv, name="generate-csv-bypass"),
     path("update-scan-qty/<invoice_no>", update_scan_qty, name="update-scan-qty"),
     path("sku-items/update-sku", update_sku, name="update-sku"),
+    path("activity-logs/", get_activity_logs, name="activity-logs"),
+    path(
+        "generate-csv-sku-items", generate_csv_sku_items, name="generate-csv-sku-items"
+    ),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

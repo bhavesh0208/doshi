@@ -9,7 +9,7 @@ import os
 from django.conf import settings
 from django.core.mail import EmailMessage
 from apscheduler.schedulers.background import BackgroundScheduler
-from datetime import datetime
+from datetime import date
 from zipfile import ZipFile
 import csv
 import boto3
@@ -77,7 +77,7 @@ def generate_BRC():
         # s3.upload_file(Filename=f"./media/barcode/{filename}",Bucket=settings.AWS_STORAGE_BUCKET_NAME,Key=f"{filename}")
 
         sku.sku_barcode_image = os.path.join(settings.MEDIA_ROOT, filepath)
-        print(sku.sku_barcode_image)
+        # print(sku.sku_barcode_image)
         sku.save()
 
 
@@ -95,7 +95,7 @@ def generate_barcode(sno=None):
 
 
 ## Logic Incomplete @
-def zipBarcodes(role):
+def zipBarcodes():
     sku_file_paths = SKUItems.objects.all().values_list("sku_barcode_image", flat=True)
     with ZipFile("./media/AllBarcodes.zip", "w") as archive:
         for image_path in sku_file_paths:
@@ -106,60 +106,72 @@ def zipBarcodes(role):
                     os.path.join(settings.MEDIA_ROOT, image_path),
                     arcname=os.path.basename(image_path),
                 )
-        # print(archive.namelist())
 
 
 def sendEmailReport():
     """send email to every user in database"""
 
-    user_email = User.objects.values("email")
-    user_email_list = [i.get("email") for i in user_email]
+    user_email = "bhavesh@farintsol.com"  # User.objects.values("email")
+    # user_email_list = [i.get("email") for i in user_email]
 
-    today_date = datetime.today().strftime("%Y-%m-%d")
-    bypass_sku_data = ByPassModel.objects.all().filter(
-        bypass_datetime__contains=today_date
-    )
+    today_date = date.today().strftime("%Y-%m-%d")
+
+    bypass_sku_data = ByPassModel.objects.filter(bypass_date=today_date)
 
     try:
         if bypass_sku_data.exists():
-            with open("Bypass_file.csv", mode="w") as employee_file:
+            with open("BypassData.csv", mode="w") as employee_file:
                 writer = csv.writer(employee_file)
                 writer.writerow(
                     [
-                        "Invoice No",
-                        "Bypass SKU Quantity",
-                        "Bypass SKU Name",
-                        "Bypass Against SKU Name",
-                        "Bypass Datetime",
+                        "Invoice_no",
+                        "Bypass S.K.U. Name",
+                        "Bypass Against S.K.U. Name",
+                        "Bypass Date",
+                        "Bypass Time",
                     ]
                 )
 
-                users = ByPassModel.objects.all().values_list(
-                    "bypass_invoice_no__invoice_no",
-                    "bypass_sku_name__sku_qty",
-                    "bypass_sku_name__sku_name",
-                    "bypass_against_sku_name__sku_name",
-                    "bypass_datetime",
-                )
+                bypass_data = ByPassModel.objects.filter(
+                    bypass_date=today_date
+                ).values()
+                for each in bypass_data:
 
-                for user in users:
-                    writer.writerow(user)
+                    invoice_no = Invoice.objects.get(
+                        id=each["bypass_invoice_no_id"]
+                    ).invoice_no
+                    bypass_sku_name = SKUItems.objects.get(
+                        id=each["bypass_sku_name_id"]
+                    ).sku_name
+                    bypass_against_sku_name = SKUItems.objects.get(
+                        id=each["bypass_against_sku_name_id"]
+                    )
+                    bypass_date = each["bypass_date"].strftime("%Y-%m-%d")
+                    bypass_time = each["bypass_time"].strftime("%H:%M:%S %p")
+
+                    bypass_data = (
+                        invoice_no,
+                        bypass_sku_name,
+                        bypass_against_sku_name,
+                        bypass_date,
+                        bypass_time,
+                    )
+                    writer.writerow(bypass_data)
 
             EmailThread(
                 "Bypass SKU List CSV data",
                 "CSV file for Bypass SKU Items",
-                user_email_list,
-                attachments="Bypass_file.csv",
+                [user_email],
+                attachments="BypassData.csv",
             ).start()
         else:
             EmailThread(
                 "Bypass SKU List CSV data",
                 "There is no bypass SKU List generated today",
-                user_email_list,
+                [user_email],
             ).start()
     except Exception as e:
-        print(e)
-        print("Error in sendEmailReport")
+        print("Error in sendEmailReport -> ", e)
 
 
 def startSchedular():
@@ -167,7 +179,7 @@ def startSchedular():
     This allows us to kill the thread when we exit the DJANGO application."""
     try:
         schedular = BackgroundScheduler(deamon=True)
-        schedular.add_job(sendEmailReport, "cron", hour=19, minute=30)
+        schedular.add_job(sendEmailReport, "cron", hour=1, minute=1)
         schedular.start()
     except Exception as e:
         print("schedular shutdown successfully")
@@ -184,5 +196,5 @@ def mapBaseQty(filename="sku.csv"):
             is_sku = SKUItems.objects.filter(sku_name=sku_item)
             if is_sku.exists():
                 fetch_sku = SKUItems.objects.get(sku_name=sku_item)
-                fetch_sku.sku_base_qty = 1 if i["PACKING"] is "" else i["PACKING"]
+                fetch_sku.sku_base_qty = 1 if i["PACKING"] == "" else i["PACKING"]
                 fetch_sku.save()

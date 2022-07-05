@@ -88,6 +88,7 @@
                       maxlength="13"
                       aria-describedby="validationServer03Feedback"
                       required
+                      autofocus
                     />
                     <div
                       class="invalid-feedback"
@@ -113,11 +114,10 @@
                         <th>S.K.U. Total Quantity</th>
                         {% comment %} <th>S.K.U. Item Rate</th>
                         <th>S.K.U. Item Amount</th> {% endcomment %}
+                        <th>S.K.U. Base Quantity</th>
                         <th>Barcode</th>
                         <th>Status</th>
-                        <th>Action</th>
-                        
-                        
+                        {% comment %} <th>Action</th> {% endcomment %}
                       </tr>
                     </thead>
 
@@ -131,6 +131,7 @@
                         </td>
                         {% comment %} <td>{{ stk.invoice_item_rate }}</td>
                         <td>{{ stk.invoice_item_amount }}</td> {% endcomment %}
+                        <td>{{srno.sku_base_qty}}</td>
                         <td id="">{{ srno.sku_serial_no }}</td>
                         {% if stk.invoice_item_scanned_status == "COMPLETED" %}
                         <td>
@@ -157,7 +158,7 @@
                           </h6>
                         </td>
                         {% endif %}
-                        <td><button class="btn btn-sm btn-warning btn-block" data-toggle="modal" data-target="#iupdateModal">Edit</button></td>
+                        {% comment %} <td><button class="btn btn-sm btn-warning btn-block" data-toggle="modal" data-target="#iupdateModal">Edit</button></td> {% endcomment %}
                       </tr>
                       {% endfor %}
                     </tbody>
@@ -183,49 +184,6 @@
       <i class="fas fa-angle-up"></i>
     </a>
 
-
-    {% comment %} {% for stk, srno in invoice_sku_list %} {% endcomment %}
-    <!-- Logout Modal-->
-    <div class="modal fade" id="iupdateModal" tabindex="-1" role="dialog" aria-labelledby="iexampleModalLabel"
-        aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="iexampleModalLabel">Update Data</h5>
-                    <button class="close" type="button" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">×</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                  
-                  <form method="POST" action="{% url 'update-scan-qty' invoice_no %}">
-                    {% csrf_token %}
-                    <div class="form-group">
-                      <label for="exampleInputTotalScans">Total Scan </label>
-                      <input type="number" class="form-control" name="invoice-item-total-scan" id="exampleInputTotalScans" min=1>
-                      {% comment %} <small id="emailHelp" class="form-text text-muted">We'll never share your email with anyone else.</small> {% endcomment %}
-                    </div>
-                    <div class="form-group">
-                      <label for="exampleInputBarcode">Barcode </label>
-                      <input type="text" class="form-control" name="invoice-barcode" id="exampleInputBarcode" max=13>
-                      {% comment %} <small id="emailHelp" class="form-text text-muted">We'll never share your email with anyone else.</small> {% endcomment %}
-                    </div>
-                    
-                    <div class="form-group">
-                      <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-                      <button class="btn btn-primary" type="submit">Update</button>
-                    </div>
-                  </form>
-
-                </div>
-                <div class="modal-footer">
-                    
-                </div>
-            </div>
-        </div>
-    </div>
-  {% comment %} {% endfor %} {% endcomment %}
-    
 
     <!-- warningModal Modal-->
     <div class="modal fade" id="warningModal">
@@ -369,7 +327,7 @@
     <script>
       $(document).ready(function (val) {
         // console.log("hello");
-        $("#barcodeInput").focus();
+        //$("#barcodeInput").focus();
         $("#barcodeInput").on("input", function (e) {
           //Fetch form to apply custom Bootstrap validation
           $("#barcodeInput").removeClass("is-invalid");
@@ -378,7 +336,7 @@
           var form = $("#needs-validation");
 
           // post data for server
-          //var check_sku = $("#1").text();
+          var check_sku = $("#1").text();
           var barcode_no = $(this).val().trim();
           // TODO: Replace input hidden with variable
           var invoice_no = $("#invoice-no").val();
@@ -401,10 +359,11 @@
                 "invoice": invoice_no,
                 "barcode": barcode_no,
                 // TODO: Remove check sku logic
-                //"check-sku": check_sku,
+                "check-sku": check_sku,
                 "csrfmiddlewaretoken": $("input[name=csrfmiddlewaretoken]").val(),
               },
               success: function (val) {
+                console.log(val);
                 if (val["status"] === "success") {
                   location.reload();
                   //console.log(val);
@@ -415,11 +374,10 @@
                   
                 } else if (val["status"] === "warning") {
                   v = $("#pending_sku_list").val();
-                  console.log(v);
                   $("#OpenModal").click();
                   $("#sku-name").attr("value", val["sku-name"]);
                   $("#barcode").attr("value", barcode_no);
-                  $("#sku-against-name").attr("value", check_sku);
+                  //$("#sku-against-name").attr("value", check_sku);
                 }
                 else
                 {
@@ -447,7 +405,7 @@
 
         $.ajax({
           type: "POST",
-          url: "{% url "bypass-invoice" %}",
+          url: "{% url 'bypass-invoice' %}",
           data: {
             barcode: barcode_no,
             invoice: invoice_no,

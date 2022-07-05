@@ -55,13 +55,16 @@
             <div class="card shadow mb-4">
               <div class="card-header d-sm-flex align-items-center justify-content-between mb-4">
                 <h6 class="mb-0 font-weight-bold text-primary">S.K.U. List</h6>
-              
-              <a
-                href="/media/AllBarcodes.zip"
-                class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"
-                download
-                ><i class="fas fa-download"></i> Download All</a
-              >
+              {% comment %}               
+                {% if request.session.role == "ADMIN" %}
+                  <a
+                    href="/media/AllBarcodes.zip"
+                    class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"
+                    download
+                    ><i class="fas fa-download"></i> Download All</a
+                  >
+                {% endif %} 
+              {% endcomment %}
           </div>
               
               <div class="card-body">
@@ -77,14 +80,14 @@
                         
                         <th>Sr.No.</th>
                         <th>S.K.U. Name</th>
-                        {% comment %} <th>Total Quantity</th> {% endcomment %}
-                        {% comment %} <th>Stock Rate</th>
-                        <th>Total Amount</th> {% endcomment %}
-                        {% if request.session.role == "ADMIN" or request.session.role == "DISPATCHER" %}
-                        <th>Package Quantity</th>
+                        <th>Quantity</th>
+                        <th>Rate</th>
+                        <th>Amount</th>
+                        {% if request.session.role == "ADMIN" or request.session.role == "EMPLOYEE" %}
+                        <th>Package</th>
                         {% endif %}
                         <th>Barcode No</th>
-                        <th>Download Barcode</th>
+                        {% comment %} <th>Download</th> {% endcomment %}
                         {% if request.session.role == "ADMIN" %}
                         <th>Action</th>
                         {% endif %}
@@ -92,19 +95,19 @@
                     </thead>
 
                     <tbody>
-                      {% for stk in sku_list %}
+                      {% for stk in sku_obj %}
                       <tr>
                         <td>{{ forloop.counter }}</td>
                         <td>{{ stk.sku_name }}</td>
-                        {% comment %} <td>{{ stk.sku_qty }}</td> {% endcomment %}
-                        {% comment %} <td>{{ stk.sku_rate }}</td>
-                        <td>{{ stk.sku_amount }}</td> {% endcomment %}
-                        {% if request.session.role == "ADMIN" or request.session.role == "DISPATCHER" %}
+                        <td>{{ stk.sku_qty }}</td>
+                        <td>{{ stk.sku_rate }}</td>
+                        <td>{{ stk.sku_amount }}</td>
+                        {% if request.session.role == "ADMIN" or request.session.role == "EMPLOYEE" %}
                         <td>{{ stk.sku_base_qty }}</td>
                         {% endif %}
                         <td>{{ stk.sku_serial_no }}</td>
-
-                        {% if stk.sku_barcode_image == None %}
+                        
+                        {% comment %} {% if stk.sku_barcode_image == None %}
                         <td>
                           <a
                             id=""
@@ -112,7 +115,7 @@
                             role="button"
                             class="btn btn-sm btn-outline-primary"
                             download
-                            ><i class="fas fa-download"> Download</i></a
+                            ><i class="fas fa-download">Download</i></a
                           >
                         </td>
                         {% else %}
@@ -123,14 +126,14 @@
                             role="button"
                             class="btn btn-sm btn-outline-primary"
                             download
-                            ><i class="fas fa-download"> Download</i></a
+                            ><i class="fas fa-download">Download</i></a
                           >
                         </td>
-                        {% endif %}
+                        {% endif %} {% endcomment %}
 
                         {% if request.session.role == "ADMIN" %}
                         <td>
-                          <button class="btn btn-sm btn-outline-warning" data-toggle="modal" data-target="#updateModal-{{ forloop.counter }}" data-id="{{sku.id}}">
+                          <button class="btn btn-sm btn-outline-warning update" data-toggle="modal" data-target="#updateDataModal" data-id="{{sku.id}}">
                             Update
                           </button>
                         </td>
@@ -140,6 +143,25 @@
                       {% endfor %}
                     </tbody>
                   </table>
+
+                  <div class="pagination">
+                    <span class="step-links">
+                        {% if page_obj.has_previous %}
+                            <a href="?page=1">&laquo; first</a>
+                            <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+                        {% endif %}
+                
+                        <span class="current">
+                            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+                        </span>
+                
+                        {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}">next</a>
+                            <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+                        {% endif %}
+                    </span>
+                </div>
+
                 </div>
               </div>
             </div>
@@ -161,11 +183,10 @@
       <i class="fas fa-angle-up"></i>
     </a>
 
-    {% for i in sku_list %}
-    <!-- Update Modal-->
+    
     <div
       class="modal fade"
-      id="updateModal-{{forloop.counter}}"
+      id="updateDataModal"
       tabindex="-1"
       role="dialog"
       aria-labelledby="exampleModalLabel"
@@ -188,7 +209,7 @@
             <form method="post" action="{% url 'update-sku' %}">
 
               {% csrf_token %}
-              <div class="form-group row">
+              {% comment %} <div class="form-group row">
                 <div class="col-sm-10">
                   <input
                     type="text"
@@ -199,7 +220,7 @@
                   />
                 </div>
               
-              </div>
+              </div> {% endcomment %}
               
               <div class="form-group row">
                 <label for="sku-name" class="col-sm-2 col-form-label"
@@ -209,9 +230,9 @@
                   <input
                     type="text"
                     class="form-control form-control-sm"
-          
+                    id ="exampleInputSKU"
                     name="update-sku-name"
-                    value="{{i.sku_name}}"
+                    minlength=2
                   />
                 </div>
               
@@ -225,26 +246,30 @@
                   <input
                     type="number"
                     class="form-control form-control-sm"
-                  
+                    id = "exampleInputBaseQty"
                     name="update-sku-qty"
-                    value="{{ i.sku_base_qty }}"
+                    value=""
+                    min=1
                   />
                 </div>
               </div>
-              {% comment %} <div class="form-group row">
-                <label for="sku-base-qty" class="col-sm-2 col-form-label"
+              <div class="form-group row">
+                {% comment %} <label for="sku-base-qty" class="col-sm-2 col-form-label"
                   >Base Qty
-                </label>
+                </label> {% endcomment %}
                 <div class="col-sm-10">
                   <input
                     type="text"
                     class="form-control form-control-sm"
-                  
+                    id = "exampleInputBarcode"
                     name="update-sku-srno"
-                    value="{{ i.sku_serial_no }}"
+                    value=""
+                    {% comment %} hidden {% endcomment %}
+                    maxlength=13
+                    hidden
                   />
                 </div>
-              </div> {% endcomment %}
+              </div> 
               <hr/>
               <div class="form-group row ">
                 <div class="col-sm-10 ">
@@ -265,7 +290,7 @@
         </div>
       </div>
     </div>
-    {% endfor %}
+
 
     <!-- Bootstrap core JavaScript-->
     <script src="{% static 'assets/vendor/bootstrap/js/bootstrap.bundle.min.js ' %}"></script>
@@ -296,12 +321,28 @@
     </script> {% endcomment %}
 
     <script>
-      $(document).ready(function () {
+
+      $(".update").click(function(){
+        var $row = $(this).closest("tr");
+        //console.log($row);
+        $tds2 = $row.find("td:nth-child(2)");
+        $tds6 = $row.find("td:nth-child(6)");
+        $tds7 = $row.find("td:nth-child(7)");
+        console.log($tds2.text(), $tds6.text(), $tds7.text());
+
+        $('#exampleInputSKU').val($tds2.text());
+        $('#exampleInputBaseQty').val($tds6.text());
+        $('#exampleInputBarcode').val($tds7.text());
+      
+      });
+
+      {% comment %} $(document).ready(function () {
         $("#stockDataTable").DataTable({
-          "lengthMenu": [[5, 10, 25, -1], [5, 10, 25, "All"]]
+          "lengthMenu": [[25, 50, 100], [25, 50, 100]],
+          //"columnDefs": [{ "searchable": true }, "targets": [ 0 ]] 
         });
         
-      });
+      }); {% endcomment %}
     </script>
   </body>
 </html>

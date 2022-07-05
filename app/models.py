@@ -1,4 +1,5 @@
 from tkinter.tix import STATUS
+from black import Mode
 from django.db.models import *
 from django.core.validators import validate_email
 from django.contrib.auth.password_validation import validate_password
@@ -23,7 +24,7 @@ class User(Model):
         (ROLE_EMPLOYEE, "Employee"),
         (ROLE_DISPATCHER, "Dispatcher"),
         (ROLE_CLIENT, "Client"),
-        (ROLE_CLIENT_HCH, "Client_HCH")
+        (ROLE_CLIENT_HCH, "Client_HCH"),
     )
 
     # DATABASE FIELDS
@@ -138,3 +139,27 @@ class ByPassModel(Model):
     # TO STRING METHOD
     def __str__(self):
         return self.bypass_invoice_no
+
+
+class Activity(Model):
+
+    # CHOICES
+    ACTIVITY_DISPATCH = "DISPATCH"
+    ACTIVITY_EDIT = "EDIT"
+    ACTIVITY_TYPE_CHOICES = (
+        (ACTIVITY_DISPATCH, "Dispatch Invoice"),
+        (ACTIVITY_EDIT, "Edit S.K.U. Name or Base Qty"),
+    )
+
+    # DATABASE FIELDS
+    activity_type = CharField(
+        max_length=30, choices=ACTIVITY_TYPE_CHOICES, default="DISPATCH"
+    )
+    activity_description = TextField(max_length=300, blank=True)
+    activity_user = ForeignKey(User, on_delete=DO_NOTHING, default=None, blank=True)
+    activity_date = DateField(auto_now_add=True)
+    activity_time = TimeField(auto_now_add=True)
+
+    # TO STRING METHOD
+    def __str__(self):
+        self.activity_description

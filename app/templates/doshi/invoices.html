@@ -226,6 +226,7 @@
     <script>
 
       $(".dispatch").click(function(){
+        $(this).attr('disabled',true);
         var invoice_no = $(this).attr('data-invoice');
         $.ajax({
         type:"GET",
@@ -234,7 +235,7 @@
           "invoice_no": invoice_no
         },
         success: function(val){
-
+            console.log(val);
             if (val["status"] === "success")
             {
               // console.log("helo");
@@ -247,6 +248,7 @@
             }
             else
               {
+                $(this).attr('enable', true);
                 const error_message = val['msg'];
                 var alert_element = `<div class=" m-3 alert alert-danger alert-dismissible fade show" id="error-alert" role="alert"> <strong>${error_message}</strong><button type="button" class="close" data-dismiss="alert" aria-label="Close"> <span aria-hidden="true">&times;</span></button></div>`;
                   $(".container-fluid").before(alert_element);

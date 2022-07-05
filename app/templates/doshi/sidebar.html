@@ -1,110 +1,118 @@
 {% load static %}
 
 <!-- Custom styles for this template-->
-<link
-href="{% static 'assets/css/sb-admin-2.min.css' %}"
-rel="stylesheet"
-/>
+<link href="{% static 'assets/css/sb-admin-2.min.css' %}" rel="stylesheet" />
 
 <!-- Sidebar -->
-<ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
+<ul
+  class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion"
+  id="accordionSidebar"
+>
+  <!-- Sidebar - Brand -->
+  <a
+    class="navbar-brand justify-content-center bg-light"
+    style="margin: 0.5rem; border-radius: 10px"
+    href="{% url 'index' %}"
+  >
+    <img
+      src="{% static 'assets/img/doshi.png' %}"
+      class="rounded"
+      alt="Logo"
+      style="width: 180px"
+    />
+  </a>
 
-    <!-- Sidebar - Brand -->
-    <a class="navbar-brand justify-content-center bg-light" style="margin: 0.5rem; border-radius:10px;" href="{% url 'index' %}">
-        <img src="{% static 'assets/img/doshi.png' %}" class="rounded" alt="Logo" style="width:180px;">
-    </a>
-    
-    {% if request.session.role == 'CLIENT' or request.session.role == 'CLIENT_HCH' %}
+  {% if request.session.role == 'CLIENT' or request.session.role == 'CLIENT_HCH' %}
 
-        <!-- Divider -->
-        <hr class="sidebar-divider">
+  <!-- Divider -->
+  <hr class="sidebar-divider" />
 
-        <!-- Nav Item - S.K.U. Items-->
-        <li class="nav-item">
-            <a class="nav-link" href="{% url 'sku-items' %}">
-                <i class="fas fa-chart-bar"></i>
-                <span>S.K.U. Items</span></a>
-        </li>
-    {% elif request.session.role == 'DISPATCHER' %}
-   
-    <!-- Divider -->
-    <hr class="sidebar-divider">
+  <!-- Nav Item - S.K.U. Items-->
+  <li class="nav-item">
+    <a class="nav-link" href="{% url 'sku-items' %}">
+      <i class="fas fa-chart-bar"></i>
+      <span>S.K.U. Items</span></a
+    >
+  </li>
 
+  {% elif request.session.role == 'DISPATCHER' %}
 
-    <!-- Nav Item - Charts -->
-    <li class="nav-item">
-        <a class="nav-link" href="{% url 'sku-items' %}">
-            <i class="fas fa-chart-bar"></i>
-            <span>S.K.U. Items</span></a>
-    </li>
-    
+  <!-- Divider -->
+  <hr class="sidebar-divider" />
 
-    <!-- Nav Item - Charts -->
-    <li class="nav-item">
-        <a class="nav-link" href="{% url 'invoices' %}">
-            <i class="fas fa-file-alt"></i>
-            <span>Scan Invoice</span></a>
-    </li>
+  <!-- Nav Item - Charts -->
+  <li class="nav-item">
+    <a class="nav-link" href="{% url 'invoices' %}">
+      <i class="fas fa-file-alt"></i>
+      <span>Scan Invoice</span></a
+    >
+  </li>
 
+  <!-- Nav Item - Tables -->
+  <li class="nav-item">
+    <a class="nav-link" href="{% url 'bypass-products' %}">
+      <i class="fas fa-reply"></i>
+      <span>Bypassed Products</span></a
+    >
+  </li>
 
-    <!-- Nav Item - Tables -->
-    <li class="nav-item">
-        <a class="nav-link" href="{% url 'bypass-products' %}">
-            <i class="fas fa-reply"></i>
-            <span>Bypassed Products</span></a>
-    </li>
-    
+  {% else %}
+  <!-- Divider -->
+  <hr class="sidebar-divider my-0" />
 
-    {% else %}
-    <!-- Divider -->
-    <hr class="sidebar-divider my-0">
+  <!-- Nav Item - Dashboard -->
+  <li class="nav-item active">
+    <a class="nav-link" href="{% url 'index' %}">
+      <i class="fas fa-home"></i>
+      <span>Dashboard</span></a
+    >
+  </li>
 
-    <!-- Nav Item - Dashboard -->
-    <li class="nav-item active">
-        <a class="nav-link" href="{% url 'index' %}">
-            <i class="fas fa-home"></i>
-            <span>Dashboard</span></a>
-           
-    </li>
+  <!-- Divider -->
+  <hr class="sidebar-divider" />
 
-    <!-- Divider -->
-    <hr class="sidebar-divider">
+  <!-- Nav Item - Charts -->
+  <li class="nav-item">
+    <a class="nav-link" href="{% url 'sku-items' %}">
+      <i class="fas fa-chart-bar"></i>
+      <span>S.K.U. Items</span></a
+    >
+  </li>
 
-    <!-- Nav Item - Charts -->
-    <li class="nav-item">
-        <a class="nav-link" href="{% url 'sku-items' %}">
-            <i class="fas fa-chart-bar"></i>
-            <span>S.K.U. Items</span></a>
-    </li>
+  <!-- Nav Item - Charts -->
+  <li class="nav-item">
+    <a class="nav-link" href="{% url 'invoices' %}">
+      <i class="fas fa-file-alt"></i>
+      <span>Scan Invoice</span></a
+    >
+  </li>
 
+  <!-- Nav Item - Tables -->
+  <li class="nav-item">
+    <a class="nav-link" href="{% url 'bypass-products' %}">
+      <i class="fas fa-reply"></i>
+      <span>Bypassed Products</span></a
+    >
+  </li>
 
-    <!-- Nav Item - Charts -->
-    <li class="nav-item">
-        <a class="nav-link" href="{% url 'invoices' %}">
-            <i class="fas fa-file-alt"></i>
-            <span>Scan Invoice</span></a>
-    </li>
+  <!-- Nav Item - Tables -->
+  <li class="nav-item">
+    <a class="nav-link" href="{% url 'activity-logs' %}">
+      <i class="fas fa-fw fa-tachometer-alt"></i>
+      <span>Activity Logs</span></a
+    >
+  </li>
+  {% endif %} {% comment %}
+  <!-- Divider -->
+  <hr class="sidebar-divider d-none d-md-block" />
 
-
-    <!-- Nav Item - Tables -->
-    <li class="nav-item">
-        <a class="nav-link" href="{% url 'bypass-products' %}">
-            <i class="fas fa-reply"></i>
-            <span>Bypassed Products</span></a>
-    </li>
-{% endif %}
-{% comment %} 
-<!-- Divider -->
-<hr class="sidebar-divider d-none d-md-block">
-
-    <!-- Sidebar Toggler (Sidebar) -->
-    <div class="text-center d-none d-md-inline">
-        <button class="rounded-circle border-0" id="sidebarToggle"></button>
-    </div> {% endcomment %}
-
+  <!-- Sidebar Toggler (Sidebar) -->
+  <div class="text-center d-none d-md-inline">
+    <button class="rounded-circle border-0" id="sidebarToggle"></button>
+  </div>
+  {% endcomment %}
 </ul>
 <!-- End of Sidebar -->
-
 
 <!-- Bootstrap core JavaScript-->
 <script src="{% static 'assets/vendor/jquery/jquery.min.js' %}"></script>

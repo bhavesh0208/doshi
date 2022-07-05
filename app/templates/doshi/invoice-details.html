@@ -79,8 +79,10 @@
                         <th>S.K.U. Total Quantity</th>
                         <th>S.K.U. Item Rate</th>
                         <th>S.K.U. Item Amount</th>
+                        <th>Barcode</th>
                         {% comment %} <th>Barcode</th> {% endcomment %}
                         <th>Status</th>
+                        <th>Action</th> 
                       </tr>
                     </thead>
 
@@ -88,12 +90,14 @@
                       {% for stk, srno in invoice_sku_list %}
                       <tr>
                         <td>{{ forloop.counter }}</td>
-                        <td>{{ srno.sku_name }}</td>
-                        <td>{{ stk.invoice_item_qty }}</td>
+                        <td class="sku-name">{{ srno.sku_name }}</td>
+                        <td>
+                          <span class="total-scan" style="color:blue">{{ stk.invoice_item_total_scan }}</span>/{{ stk.invoice_item_qty }}
+                        </td>
                         <td>{{ stk.invoice_item_rate }}</td>
                         <td>{{ stk.invoice_item_amount }}</td>
                         {% comment %} <td>{{ srno.sku_serial_no }}</td> {% endcomment %}
-                        
+                        <td class="barcode">{{ srno.sku_serial_no }}</td>
                         {% if stk.invoice_item_scanned_status == "COMPLETED" %}
                         <td>
                           <h6>
@@ -107,14 +111,13 @@
                           </h6>
                         </td>
                         {% else %}
-                        <td>
-                          <h6>
-                            <span class="badge rounded-pill badge-danger">pending</span>
-                          </h6>
-                        </td>
-
+                          <td>
+                            <h6>
+                              <span class="badge rounded-pill badge-danger">pending</span>
+                            </h6>
+                          </td>
                         {% endif %}
-                        
+                        <td><button class="btn btn-sm btn-warning btn-block update" data-toggle="modal" data-target="#iupdateModal">Edit</button></td>
                       </tr>
                       {% endfor %}
                     </tbody>
@@ -140,56 +143,58 @@
       <i class="fas fa-angle-up"></i>
     </a>
 
-    <!-- warningModal Modal-->
-  <div class="modal fade" id="warningModal">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content">
-      
-        <!-- Modal Header -->
-        <div class="modal-header">
-          <h4 class="modal-title text-danger">Bypass Product</h4>
-          <button type="button" class="close" data-dismiss="modal">×</button>
-        </div>
-        
-        <!-- Modal body -->
-        <div class="modal-body">
-
-            <form method="post" action="{% url 'bypass-invoice' %}">
-                
-                {% csrf_token %}
-                <div class="form-group row">
-                  <label for="barcode" class="col-sm-2 col-form-label">Barcode</label>
-                  <div class="col-sm-10">
-                    <input type="text" readonly class="form-control form-control-sm" id="barcode" value="">
-                  </div>
-                </div>
-                <div class="form-group row">
-                  <label for="sku-name" class="col-sm-2 col-form-label">S.K.U. </label>
-                  <div class="col-sm-10">
-                    <input type="text" readonly class="form-control form-control-sm" id="sku-name" value="">
-                  </div>
-                </div>
-                <div class="form-group row">
-                  <label for="sku-against-name" class="col-sm-2 col-form-label">ByPass S.K.U.</label>
-                  <div class="col-sm">
-                    <input type="text" readonly class="form-control form-control-sm" id="sku-against-name" value="">
-                  </div>
-                </div>
-                
-              </form>
-        </div>
-        
-        <!-- Modal footer -->
-        <div class="modal-footer">
-          <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
-          <button type="submit" class="btn btn-primary"  data-dismiss="modal" id="byPassDataBtn">Proceed</button>
-        </div>
-        
-      </div>
-    </div>
-  </div>
-  
     
+
+    {% comment %} {% for stk, srno in invoice_sku_list %} {% endcomment %}
+    <!-- Logout Modal-->
+    <div class="modal fade" id="iupdateModal" tabindex="-1" role="dialog" aria-labelledby="iexampleModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="iexampleModalLabel">Update Data</h5>
+                    <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                  
+                  <form method="POST" action="{% url 'update-scan-qty' invoice_details.invoice_no %}">
+                    {% csrf_token %}
+                    
+                    <div class="form-group">
+                      <div class="form-group">
+                        <label for="exampleInputSKU">S.K.U. Name</label>
+                        <input  type="text" class="form-control" name="invoice-item-sku" id="exampleInputSKU" disabled>
+                        {% comment %} <small id="emailHelp" class="form-text text-muted">We'll never share your email with anyone else.</small> {% endcomment %}
+                      </div>
+                      <label for="exampleInputTotalScans">Total Scan</label>
+                      <input  type="number" class="form-control" name="invoice-item-total-scan" id="exampleInputTotalScans" min=1>
+                      {% comment %} <small id="emailHelp" class="form-text text-muted">We'll never share your email with anyone else.</small> {% endcomment %}
+                    </div>
+                    
+                    <div class="form-group">
+                      <input type="text" class="form-control" name="invoice-barcode" id="exampleInputBarcode" max=13 hidden>
+                      {% comment %} <small id="emailHelp" class="form-text text-muted">We'll never share your email with anyone else.</small> {% endcomment %}
+                    </div>
+                    
+                    <div class="form-group">
+                      <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                      <button class="btn btn-primary" type="submit">Update</button>
+                    </div>
+                  </form>
+
+                </div>
+                <div class="modal-footer">
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+  {% comment %} {% endfor %} {% endcomment %}
+    
+
+
     <!-- Bootstrap core JavaScript-->
     <script src="{% static 'assets/vendor/bootstrap/js/bootstrap.bundle.min.js ' %}"></script>
     <script src="{% static 'assets/vendor/jquery/jquery.min.js' %}"></script>
@@ -212,6 +217,21 @@
         $("#allInvoiceDataTable").DataTable({
           "lengthMenu": [[5, 10, 25, -1], [5, 10, 25, "All"]]
         });
+      });
+    </script>
+
+    <script>
+      $(".update").click(function(){
+        var $row = $(this).closest("tr");
+        //console.log($row);
+        $tds2 = $row.find("td:nth-child(2)");
+        $tds6 = $row.find("td:nth-child(6)");
+        $tds3 = $row.find("td:nth-child(3").find('span');
+        //console.log($tds2.text(), $tds6.text(), $tds3.text());
+        $('#exampleInputSKU').val($tds2.text());
+        $('#exampleInputBarcode').val($tds6.text());
+        $('#exampleInputTotalScans').val($tds3.text());
+      
       });
     </script>
 

@@ -8,3 +8,4 @@ doshi/__pycache__/
 .vscode/launch.json
 .vscode/settings.json
 sku.csv
+BypassData.csv
