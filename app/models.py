@@ -1,10 +1,8 @@
-from tkinter.tix import STATUS
-from black import Mode
 from django.db.models import *
 from django.core.validators import validate_email
 from django.contrib.auth.password_validation import validate_password
 from .validators import *
-from datetime import date, datetime
+from datetime import date, datetime, time
 from django.utils import timezone
 from django.contrib.auth.hashers import make_password
 
@@ -132,7 +130,7 @@ class ByPassModel(Model):
         blank=True,
         related_name="bypass_against_sku_name",
     )
-    bypass_date = DateField(auto_now_add=True)
+    bypass_date = DateField(default=date.today())
     bypass_time = TimeField(auto_now_add=True)
     # bypass_by = ForeignKey(invoice_user, on_delete=SET_NULL, default=None, blank=True)
 
