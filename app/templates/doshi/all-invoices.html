@@ -86,17 +86,24 @@
                         <td>{{ invoice.invoice_date }}</td>
                         <td>{{ invoice.invoice_total_amount }}</td>
                         
-                        {% if status %}
+                        {% if status == "COMPLETED" %}
                         <td>
-                          <h5>
+                          <h6>
                             <span class="badge rounded-pill badge-success"> Completed </span>
-                          </h5>
+                          </h6>
                         </td>
+                        {% elif status == "EXTRA" %}
+                        <td>
+                          <h6>
+                            <span class="badge rounded-pill badge-warning"> EXTRA </span>
+                          </h6>
+                        </td>
+
                         {% else %}
                         <td>
-                          <h5>
+                          <h6>
                             <span class="badge rounded-pill badge-danger"> Pending </span>
-                          </h5>
+                          </h6>
                         </td>
                         {% endif %}
                         
@@ -107,6 +114,7 @@
                             role="button"
                             >View</a
                           >
+                          
                         </td>
                       </tr>
                       {% endfor %}

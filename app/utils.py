@@ -9,27 +9,29 @@ import os
 from django.conf import settings
 from django.core.mail import EmailMessage
 from apscheduler.schedulers.background import BackgroundScheduler
-from datetime import datetime
+from datetime import date
 from zipfile import ZipFile
-import pathlib
+import csv
+import boto3
+
 
 class EmailThread(Thread):
-    def __init__(self, subject, body, email, attachments = None):
+    def __init__(self, subject, body, email, attachments=None):
         self.subject = subject
         self.body = body
         self.email = email
-        self.attachments =attachments
+        self.attachments = attachments
         Thread.__init__(self)
 
     def run(self):
         from_email = "djangodeveloper09@gmail.com"
         to = self.email
-        
+
         if isinstance(to, str):
             e = EmailMessage(self.subject, self.body, from_email, [to])
         else:
             e = EmailMessage(self.subject, self.body, from_email, to)
-        
+
         if self.attachments is not None:
             e.attach_file(self.attachments)
         e.send()
@@ -38,10 +40,10 @@ class EmailThread(Thread):
 class GenerateBRCode(Thread):
     def __init__(self):
         Thread.__init__(self)
-    
+
     def run(self):
         sku_list = SKUItems.objects.all()
-        
+
         for sku in sku_list:
 
             try:
@@ -59,84 +61,140 @@ class GenerateBRCode(Thread):
                 with open(filepath, "wb") as f:
                     EAN13(sku.sku_serial_no, writer=ImageWriter()).write(f)
 
-
                 sku.sku_barcode_image = filepath
 
                 sku.save()
 
 
 def generate_BRC():
-    for each in SKUItems.objects.all():
-        filename = str(each.sku_serial_no)+".jpg"
-        filepath = settings.MEDIA_URL + filename
-        with open(filepath, "wb") as f:
-            EAN13(each.sku_serial_no, writer=ImageWriter()).write(f)
-        each.sku_barcode_image = filepath
-        each.save()
+    sku_list = SKUItems.objects.all()
+
+    for sku in sku_list:
+        # filename =  generate_barcode(sku.sku_serial_no)
+        filepath = "{}.jpg".format(sku.sku_serial_no)
+        # filepath = os.path.join()
+        # s3 = boto3.client("s3",  aws_access_key_id=settings.AWS_ACCESS_KEY_ID, aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY)
+        # s3.upload_file(Filename=f"./media/barcode/{filename}",Bucket=settings.AWS_STORAGE_BUCKET_NAME,Key=f"{filename}")
+
+        sku.sku_barcode_image = os.path.join(settings.MEDIA_ROOT, filepath)
+        # print(sku.sku_barcode_image)
+        sku.save()
 
 
 def generate_barcode(sno=None):
-    # sno = EAN13(str(randint(100000000000, 999999999999)), writer=ImageWriter())
-    
+    if sno is None:
+        sno = EAN13(str(randint(100000000000, 999999999999)), writer=ImageWriter())
 
-    filename = "{}.png".format(sno)
+    filename = "{}.jpg".format(sno)
     filepath = "./media/barcode/{}".format(filename)
-    
-    print(os.path.join(MEDIA_ROOT, filename))
-    # with open(filepath, "wb") as f:
-    #     EAN13(sno, writer=ImageWriter()).write(f)
-    
-    return (filepath)
+
+    with open(filepath, "wb") as f:
+        EAN13(sno, writer=ImageWriter()).write(f)
+
+    return filename
 
 
-## Logic Incomplete @ 
+## Logic Incomplete @
 def zipBarcodes():
-    sku_file_paths = SKUItems.objects.all().values_list('sku_barcode_image', flat=True)
-    with ZipFile('./media/AllBarcodes.zip','w') as archive:
+    sku_file_paths = SKUItems.objects.all().values_list("sku_barcode_image", flat=True)
+    with ZipFile("./media/AllBarcodes.zip", "w") as archive:
         for image_path in sku_file_paths:
             if image_path == "backup/":
                 continue
-            elif image_path is not None :
-                archive.write(os.path.join(settings.MEDIA_ROOT, image_path), arcname=os.path.basename(image_path))
-        # print(archive.namelist())
+            elif image_path is not None:
+                archive.write(
+                    os.path.join(settings.MEDIA_ROOT, image_path),
+                    arcname=os.path.basename(image_path),
+                )
+
 
 def sendEmailReport():
-    """ send email to every user in database """
+    """send email to every user in database"""
 
-    user_email = User.objects.values('email')
-    user_email_list = [i.get('email') for i in user_email]
+    user_email = "bhavesh@farintsol.com"  # User.objects.values("email")
+    # user_email_list = [i.get("email") for i in user_email]
 
-    today_date = datetime.today().strftime('%Y-%m-%d')
-    bypass_sku_data = ByPassModel.objects.all().filter(bypass_datetime__contains = today_date)
-    
+    today_date = date.today().strftime("%Y-%m-%d")
+
+    bypass_sku_data = ByPassModel.objects.filter(bypass_date=today_date)
+
     try:
-
         if bypass_sku_data.exists():
-            with open('Bypass_file.csv', mode='w') as employee_file:
-                import csv
+            with open("BypassData.csv", mode="w") as employee_file:
                 writer = csv.writer(employee_file)
-                writer.writerow(['Invoice No', 'Bypass SKU Quantity', 'Bypass SKU Name', 'Bypass Against SKU Name', 'Bypass Datetime'])
+                writer.writerow(
+                    [
+                        "Invoice_no",
+                        "Bypass S.K.U. Name",
+                        "Bypass Against S.K.U. Name",
+                        "Bypass Date",
+                        "Bypass Time",
+                    ]
+                )
 
-                users = ByPassModel.objects.all().values_list('bypass_invoice_no__invoice_no', 'bypass_sku_name__sku_qty', 'bypass_sku_name__sku_name', 'bypass_against_sku_name__sku_name', 'bypass_datetime')
+                bypass_data = ByPassModel.objects.filter(
+                    bypass_date=today_date
+                ).values()
+                for each in bypass_data:
 
-                for user in users:
-                    writer.writerow(user)
+                    invoice_no = Invoice.objects.get(
+                        id=each["bypass_invoice_no_id"]
+                    ).invoice_no
+                    bypass_sku_name = SKUItems.objects.get(
+                        id=each["bypass_sku_name_id"]
+                    ).sku_name
+                    bypass_against_sku_name = SKUItems.objects.get(
+                        id=each["bypass_against_sku_name_id"]
+                    )
+                    bypass_date = each["bypass_date"].strftime("%Y-%m-%d")
+                    bypass_time = each["bypass_time"].strftime("%H:%M:%S %p")
 
-            EmailThread('Bypass SKU List CSV data', 'CSV file for Bypass SKU Items', user_email_list, attachments='Bypass_file.csv').start()
+                    bypass_data = (
+                        invoice_no,
+                        bypass_sku_name,
+                        bypass_against_sku_name,
+                        bypass_date,
+                        bypass_time,
+                    )
+                    writer.writerow(bypass_data)
+
+            EmailThread(
+                "Bypass SKU List CSV data",
+                "CSV file for Bypass SKU Items",
+                [user_email],
+                attachments="BypassData.csv",
+            ).start()
         else:
-            EmailThread('Bypass SKU List CSV data', 'There is no bypass SKU List generated today', user_email_list).start()
+            EmailThread(
+                "Bypass SKU List CSV data",
+                "There is no bypass SKU List generated today",
+                [user_email],
+            ).start()
     except Exception as e:
-        print(e)
-        print("Error in sendEmailReport")
+        print("Error in sendEmailReport -> ", e)
 
-    
 
 def startSchedular():
-    """Create a BackgroundScheduler, and set the daemon parameter to True. This allows us to kill the thread when we exit the DJANGO application."""
+    """Create a BackgroundScheduler, and set the daemon parameter to True.
+    This allows us to kill the thread when we exit the DJANGO application."""
     try:
         schedular = BackgroundScheduler(deamon=True)
-        schedular.add_job(sendEmailReport, 'cron', hour=19, minute=30)
+        schedular.add_job(sendEmailReport, "cron", hour=1, minute=1)
         schedular.start()
     except Exception as e:
-        print('schedular shutdown successfully')
+        print("schedular shutdown successfully")
         schedular.shutdown()
+
+
+def mapBaseQty(filename="sku.csv"):
+    """Map data from CSV file -> SKU Name and update SKU base qty"""
+    with open(os.path.join(filename)) as csvfile:
+        csvreader = csv.DictReader(csvfile)
+
+        for i in csvreader:
+            sku_item = i["ITEM"]
+            is_sku = SKUItems.objects.filter(sku_name=sku_item)
+            if is_sku.exists():
+                fetch_sku = SKUItems.objects.get(sku_name=sku_item)
+                fetch_sku.sku_base_qty = 1 if i["PACKING"] == "" else i["PACKING"]
+                fetch_sku.save()
