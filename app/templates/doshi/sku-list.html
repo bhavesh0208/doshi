@@ -58,7 +58,7 @@
                 <a
                   href="{% url 'generate-csv-sku-items' %}"
                   class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"
-                  ><i class="fas fa-download fa-sm text-white-50"></i> Generate Report</a
+                  ><i class="fas fa-download fa-sm text-white-50"></i> Download Excel</a
                 >
               {% comment %}               
                 {% if request.session.role == "ADMIN" %}
@@ -85,11 +85,11 @@
                         
                         <th>Sr.No.</th>
                         <th>S.K.U. Name</th>
+                        {% if request.session.role == "ADMIN" or request.session.role == "EMPLOYEE" %}
                         <th>Quantity</th>
                         <th>Rate</th>
                         <th>Amount</th>
-                        {% if request.session.role == "ADMIN" or request.session.role == "EMPLOYEE" %}
-                        <th>Package</th>
+                        <th>Base Qty</th>
                         {% endif %}
                         <th>Barcode No</th>
                         {% comment %} <th>Download</th> {% endcomment %}
@@ -104,10 +104,11 @@
                       <tr>
                         <td>{{ forloop.counter }}</td>
                         <td>{{ stk.sku_name }}</td>
+                        {% if request.session.role == "ADMIN" or request.session.role == "EMPLOYEE" %}
                         <td>{{ stk.sku_qty }}</td>
                         <td>{{ stk.sku_rate }}</td>
                         <td>{{ stk.sku_amount }}</td>
-                        {% if request.session.role == "ADMIN" or request.session.role == "EMPLOYEE" %}
+                        
                         <td>{{ stk.sku_base_qty }}</td>
                         {% endif %}
                         <td>{{ stk.sku_serial_no }}</td>
@@ -186,18 +187,30 @@
 {% endif %} {% endcomment %}
 
 
-                      <div>
-                        <span>
+                      <div class="my-3">
+                        <ul class="pagination justify-content-end">
                           {% if sku_obj.has_previous %}
-                            <a href="?page={{ sku_obj.previous_page_number }}">Previous</a>
+                            <li class="page-item"><a class="page-link" href="?page={{ sku_obj.previous_page_number }}">Previous</a></li>
+                          {% else %}
+                          <li class="page-item disabled"><a class="page-link" href="#">Previous</a></li>
                           {% endif %}
-                          <span>
-                            Page {{ sku_obj.number }} of {{ sku_obj.paginator.num_pages }}.
-                          </span>
+
+                          <li class="page-item">
+                            <a class="page-link" >
+                              <span class="current">
+                                Page {{ sku_obj.number }} of {{ sku_obj.paginator.num_pages }}
+                            </span>
+                            </a>
+                          </li>
+   
                           {% if sku_obj.has_next %}
-                            <a href="?page={{ sku_obj.next_page_number }}">Next</a>
+                            <li class="page-item"><a class="page-link" href="?page={{ sku_obj.next_page_number }}">Next</a></li>
+                          {% else %}
+                          <li class="page-item disabled"><a class="page-link" href="#">Next</a></li>
+                                                     
                           {% endif %}
-                        </span>
+
+                      </ul>
                       </div>
                                         
                 </div>
@@ -376,6 +389,7 @@
 
       $(document).ready(function () {
         $("#stockDataTable").DataTable({
+          "bInfo": null,
           "lengthMenu": [[25, 50, 100], [25, 50, 100]],
           "paging":false
           //"columnDefs": [{ "searchable": true }, "targets": [ 0 ]] 

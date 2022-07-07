@@ -4,7 +4,7 @@ from pydoc import describe
 from urllib import response
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
+from django.http import HttpResponse, JsonResponse, HttpResponseRedirect, HttpResponse
 from .models import *
 from django.core.mail import send_mail
 from django.core.files import File
@@ -19,8 +19,7 @@ from datetime import datetime, date
 import csv
 from django.contrib.auth.hashers import make_password, check_password
 from django.core.paginator import Paginator
-from django.http import HttpResponse
-
+import xlwt
 
 # Create your views here.
 
@@ -718,18 +717,63 @@ def get_activity_logs(request):
 
 
 def generate_csv_sku_items(request):
-    response = HttpResponse(content_type="text/csv")
-    response["Content-Disposition"] = "attachment; filename='StockUnits.csv'"
+    if "id" in request.session:
+        role = request.session["role"]
 
-    writer = csv.writer(response)
-    writer.writerow(["S.K.U. Name", "S.K.U. Barcode Number"])
+        response = HttpResponse(content_type="application/ms-excel")
+        response["Content-Disposition"] = 'attachment; filename="StockUnits.xls"'
+        # response = HttpResponse(content_type="text/csv")
+        # response["Content-Disposition"] = "attachment; filename='StockUnits.csv'"
 
-    sku_data = SKUItems.objects.only("sku_name", "sku_serial_no")
-    for each in sku_data:
-        sku_name = each.sku_name
-        sku_serial_no = each.sku_serial_no
+        wb = xlwt.Workbook(encoding="utf-8")
+        ws = wb.add_sheet("SKUItems")
 
-        row_sku_data = (sku_name, sku_serial_no)
-        writer.writerow(row_sku_data)
+        # Sheet header, first row
+        row_num = 0
 
-    return response
+        font_style = xlwt.XFStyle()
+        font_style.font.bold = True
+
+        columns = [
+            "S.K.U. Name",
+            "Barcode Number",
+        ]
+        for col_num in range(len(columns)):
+            ws.write(row_num, col_num, columns[col_num], font_style)
+
+        # Sheet body, remaining rows
+        font_style = xlwt.XFStyle()
+
+        # rows = SKUItems.objects.all().values_list('username', 'first_name', 'last_name', 'email')
+        if role == "CLIENT_HCH":
+            rows = SKUItems.objects.filter(sku_name__contains="HCH").values_list(
+                "sku_name", "sku_serial_no"
+            )
+        else:
+            rows = SKUItems.objects.all().values_list("sku_name", "sku_serial_no")
+
+        for row in rows:
+            row_num += 1
+            for col_num in range(len(row)):
+                ws.write(row_num, col_num, row[col_num], font_style)
+
+        wb.save(response)
+        return response
+
+        # if role == "CLIENT_HCH":
+        #     sku_data = SKUItems.objects.filter(sku_name__contains="HCH").only(
+        #         "sku_name", "sku_serial_no"
+        #     )
+        # else:
+        #     sku_data = SKUItems.objects.only("sku_name", "sku_serial_no")
+        # writer = csv.writer(response)
+        # writer.writerow(["S.K.U. Name", "S.K.U. Barcode Number"])
+
+        # for each in sku_data:
+        #     sku_name = each.sku_name
+        #     sku_serial_no = each.sku_serial_no
+
+        #     row_sku_data = (sku_name, sku_serial_no)
+        #     writer.writerow(row_sku_data)
+
+        # return response
