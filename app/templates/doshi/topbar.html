@@ -19,7 +19,7 @@
 
         <!-- Nav Item - User Information -->
         <li class="nav-item dropdown no-arrow">
-            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
+            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" onclick="showOption()"
                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 <span class="mr-2 d-none d-lg-inline text-gray-600 small">{{ request.session.name }}</span>
                 <img class="img-profile rounded-circle"
@@ -27,7 +27,7 @@
             </a>
             <!-- Dropdown - User Information -->
             <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
-                aria-labelledby="userDropdown">
+                aria-labelledby="userDropdown"  id="logout-div">
                 <a class="dropdown-item" href="{% url 'logout' %}">
                     <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
                     Logout
@@ -49,4 +49,24 @@
 
 <!-- Custom scripts for all pages-->
 <script src="{% static 'assets/js/sb-admin-2.min.js' %}"></script>
+
+
+<script>
+    function showOption() {
+        var div = document.getElementById('logout-div');
+        if (div.style.display == 'block') {
+            div.style.display = 'none';
+        }
+        else {
+            div.style.display = 'block';
+        }
+    }
+
+    window.addEventListener('click', function(e) {
+        if (!document.getElementById('logout-div').contains(e.target)){
+            document.getElementById('logout-div').style.display = 'none';
+        }
+    });
+</script>
+
 

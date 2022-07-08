@@ -28,7 +28,7 @@ def index(request):
     if "id" in request.session:
         role = request.session["role"]
         if role in ["CLIENT_HCH", "CLIENT"]:
-            return redirect("sku-items")
+            return redirect("sku-items", page=1)
         elif role in ["DISPATCHER"]:
             return redirect("invoices")
         else:
@@ -127,7 +127,7 @@ def login(request):
                         request.session["name"] = user.name
                         request.session["role"] = user.role
                         if user.role in ["CLIENT_HCH", "CLIENT"]:
-                            return redirect("sku-items")
+                            return redirect("sku-items", page=1)
                         elif user.role in ["DISPATCHER"]:
                             return redirect("invoices")
                         else:
@@ -222,7 +222,7 @@ def reset_password(request):
         return redirect("login")
 
 
-def sku_items(request):
+def sku_items(request, page=1):
     try:
         if "id" in request.session:
             role = request.session["role"]
@@ -235,32 +235,16 @@ def sku_items(request):
                 return redirect("invoices")
             #
             paginator = Paginator(sku_list, 25)
-            page_number = request.GET.get("page")
+            page_number = page
             sku_obj = paginator.get_page(page_number)
+            sku_obj.adjusted_elided_pages = paginator.get_elided_page_range(
+                page_number, on_each_side=1
+            )
             return render(request, "doshi/sku-list.html", {"sku_obj": sku_obj})
         else:
             return redirect("login")
     except Exception as e:
         return redirect("index")
-
-
-# def sku_items(request):
-#     try:
-#         if "id" in request.session:
-#             role = request.session["role"]
-
-#             if role == "CLIENT_HCH":
-#                 sku_list = SKUItems.objects.filter(sku_name__contains="HCH")
-#             elif role in ["ADMIN", "CLIENT", "EMPLOYEE"]:
-#                 sku_list = SKUItems.objects.all()[:100]  # TODO:remove
-#             else:
-#                 return redirect("invoices")
-
-#             return render(request, "doshi/sku-list.html", {"sku_list": sku_list})
-#         else:
-#             return redirect("login")
-#     except Exception as e:
-#         return redirect("index")
 
 
 def invoice_status(invoice_no):
@@ -285,7 +269,7 @@ def get_all_invoices(request):
     if "id" in request.session:
         role = request.session["role"]
         if role in ["CLIENT_HCH", "CLIENT"]:
-            return redirect("sku-items")
+            return redirect("sku-items", page=1)
         else:
 
             invoices = (
@@ -314,7 +298,7 @@ def invoices(request):
     if "id" in request.session:
         role = request.session["role"]
         if role in ["CLIENT_HCH", "CLIENT"]:
-            return redirect("sku-items")
+            return redirect("sku-items", page=1)
         else:
             invoices = (
                 Invoice.objects.filter(invoice_item_scanned_status__in=["PENDING"])
@@ -342,7 +326,7 @@ def invoice_details(request, invoice_no):
     if "id" in request.session:
         role = request.session["role"]
         if role in ["CLIENT_HCH", "CLIENT"]:
-            return redirect("sku-items")
+            return redirect("sku-items", page=1)
         else:
 
             invoice_sku_list = Invoice.objects.filter(invoice_no=str(invoice_no))
@@ -368,7 +352,7 @@ def bypass_products(request):
     if "id" in request.session:
         role = request.session["role"]
         if role in ["CLIENT_HCH", "CLIENT"]:
-            return redirect("sku-items")
+            return redirect("sku-items", page=1)
         else:
             get_bypass_list = ByPassModel.objects.all()
             return render(
@@ -404,7 +388,7 @@ def invoice_verify(request, invoice_no):
     if "id" in request.session and invoice_sku_list.count() > 0:
         role = request.session["role"]
         if role in ["CLIENT_HCH", "CLIENT"]:
-            return redirect("sku-items")
+            return redirect("sku-items", page=1)
         else:
             return render(
                 request,
@@ -648,28 +632,34 @@ def update_scan_qty(request, invoice_no):
 def dispatch_invoice(request):
     if "id" in request.session:
         try:
-            if request.is_ajax:
-                invoice_no = request.GET.get("invoice_no", None)
-                invoice_sku_list = Invoice.objects.filter(invoice_no=invoice_no)
-                for item in invoice_sku_list:
-                    item.invoice_item_scanned_status = "COMPLETED"
-                    item.save()
+            role = request.session["role"]
+            if role in ["CLIENT_HCH", "CLIENT"]:
+                return redirect("sku-items", page=1)
+            elif role in ["DISPATCHER"]:
+                return redirect("invoices")
+            else:
+                if request.is_ajax:
+                    invoice_no = request.GET.get("invoice_no", None)
+                    invoice_sku_list = Invoice.objects.filter(invoice_no=invoice_no)
+                    for item in invoice_sku_list:
+                        item.invoice_item_scanned_status = "COMPLETED"
+                        item.save()
 
-                user_id = request.session["id"]
-                user = User.objects.get(id=user_id)
+                    user_id = request.session["id"]
+                    user = User.objects.get(id=user_id)
 
-                description = f"Invoice No: {invoice_no} dispatched by {user}."
-                Activity.objects.create(
-                    activity_type="DISPATCH",
-                    activity_user=user,
-                    activity_description=description,
-                )
-                return JsonResponse(
-                    {
-                        "status": "success",
-                        "msg": f"Invoice No.{invoice_no} dispatched successfully.",
-                    }
-                )
+                    description = f"Invoice No: {invoice_no} dispatched by {user}."
+                    Activity.objects.create(
+                        activity_type="DISPATCH",
+                        activity_user=user,
+                        activity_description=description,
+                    )
+                    return JsonResponse(
+                        {
+                            "status": "success",
+                            "msg": f"Invoice No.{invoice_no} dispatched successfully.",
+                        }
+                    )
         except User.DoesNotExist:
             JsonResponse({"status": "error", "msg": e})
         except Exception as e:
@@ -700,7 +690,7 @@ def update_sku(request):
                     activity_description=description,
                     activity_user=user,
                 )
-                return redirect("sku-items")
+                return redirect("sku-items", page=1)
         except Exception as e:
             return HttpResponse("Error -> ", e)
     return JsonResponse({"success": "record updated"})
@@ -708,22 +698,26 @@ def update_sku(request):
 
 def get_activity_logs(request):
     if "id" in request.session:
-        activity_data = Activity.objects.all()
+        role = request.session["role"]
+        if role in ["CLIENT_HCH", "CLIENT"]:
+            return redirect("sku-items", page=1)
+        elif role in ["DISPATCHER"]:
+            return redirect("invoices")
+        else:
+            activity_data = Activity.objects.all()
 
-        return render(
-            request, "doshi/activity-logs.html", {"activity_data": activity_data}
-        )
+            return render(
+                request, "doshi/activity-logs.html", {"activity_data": activity_data}
+            )
     return redirect("login")
 
 
-def generate_csv_sku_items(request):
+def generate_excel_sku_items(request):
     if "id" in request.session:
         role = request.session["role"]
 
         response = HttpResponse(content_type="application/ms-excel")
         response["Content-Disposition"] = 'attachment; filename="StockUnits.xls"'
-        # response = HttpResponse(content_type="text/csv")
-        # response["Content-Disposition"] = "attachment; filename='StockUnits.csv'"
 
         wb = xlwt.Workbook(encoding="utf-8")
         ws = wb.add_sheet("SKUItems")
@@ -760,20 +754,14 @@ def generate_csv_sku_items(request):
         wb.save(response)
         return response
 
-        # if role == "CLIENT_HCH":
-        #     sku_data = SKUItems.objects.filter(sku_name__contains="HCH").only(
-        #         "sku_name", "sku_serial_no"
-        #     )
-        # else:
-        #     sku_data = SKUItems.objects.only("sku_name", "sku_serial_no")
-        # writer = csv.writer(response)
-        # writer.writerow(["S.K.U. Name", "S.K.U. Barcode Number"])
 
-        # for each in sku_data:
-        #     sku_name = each.sku_name
-        #     sku_serial_no = each.sku_serial_no
-
-        #     row_sku_data = (sku_name, sku_serial_no)
-        #     writer.writerow(row_sku_data)
-
-        # return response
+def get_company_list(request):
+    if "id" in request.session:
+        role = request.session["role"]
+        if role in ["CLIENT_HCH", "CLIENT"]:
+            return redirect("sku-items", page=1)
+        elif role in ["DISPATCHER"]:
+            return redirect("invoices")
+        else:
+            companies = Company.objects.all()
+            return render(request, "doshi/companies.html", {"company_data": companies})

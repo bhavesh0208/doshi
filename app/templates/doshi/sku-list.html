@@ -185,9 +185,24 @@
     {% endif %}
   </ul>
 {% endif %} {% endcomment %}
+<div class="my-3">
+  <ul class="pagination justify-content-end">
+    {% for page_number in sku_obj.adjusted_elided_pages %}
+      {% if page_number == sku_obj.paginator.ELLIPSIS %}
+        <li class="page-item"><a class="page-link">...</a></li>
+      {% else %}
+      <li class="page-item"><a
+            href="{% url 'sku-items' page_number %}"
+            class="page-link {% if page_number == sku_obj.number %}current{% endif %}"
+        >
+            {{page_number}}
+        </a></li>
+    {% endif %}
+    {% endfor %}
+  </ul>
+</div>
 
-
-                      <div class="my-3">
+                      {% comment %} <div class="my-3">
                         <ul class="pagination justify-content-end">
                           {% if sku_obj.has_previous %}
                             <li class="page-item"><a class="page-link" href="?page={{ sku_obj.previous_page_number }}">Previous</a></li>
@@ -210,8 +225,8 @@
                                                      
                           {% endif %}
 
-                      </ul>
-                      </div>
+                        </ul>
+                      </div> {% endcomment %}
                                         
                 </div>
               </div>
