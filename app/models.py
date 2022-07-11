@@ -121,8 +121,12 @@ class Invoice(Model):
 class ByPassModel(Model):
 
     # DATABASE FIELDS
-    bypass_invoice_no = ForeignKey(Invoice, on_delete=CASCADE, default=None, blank=True)
-    bypass_sku_name = ForeignKey(SKUItems, on_delete=CASCADE, default=None, blank=True)
+    bypass_invoice_no = ForeignKey(
+        Invoice, on_delete=DO_NOTHING, default=None, blank=True
+    )
+    bypass_sku_name = ForeignKey(
+        SKUItems, on_delete=DO_NOTHING, default=None, blank=True
+    )
     bypass_against_sku_name = ForeignKey(
         SKUItems,
         on_delete=CASCADE,
@@ -135,8 +139,8 @@ class ByPassModel(Model):
     # bypass_by = ForeignKey(invoice_user, on_delete=SET_NULL, default=None, blank=True)
 
     # TO STRING METHOD
-    def __str__(self):
-        return self.bypass_invoice_no
+    # def __str__(self):
+    #     return self.bypass_invoice_no.invoice_no
 
 
 class Activity(Model):
