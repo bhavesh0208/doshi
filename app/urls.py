@@ -10,7 +10,7 @@ urlpatterns = [
     path("forgot-password/", forgot_password, name="forgot-password"),
     path("verify-otp/", verify_otp, name="verify-otp"),
     path("reset-password/", reset_password, name="reset-password"),
-    path("sku-items/", sku_items, name="sku-items"),
+    path("sku-items/<int:page>", sku_items, name="sku-items"),
     path("invoices/", invoices, name="invoices"),
     path("all-invoices/", get_all_invoices, name="all-invoices"),
     path("invoices/invoice-verify/<invoice_no>", invoice_verify, name="invoice-verify"),
@@ -28,6 +28,9 @@ urlpatterns = [
     path("sku-items/update-sku", update_sku, name="update-sku"),
     path("activity-logs/", get_activity_logs, name="activity-logs"),
     path(
-        "generate-csv-sku-items", generate_csv_sku_items, name="generate-csv-sku-items"
+        "generate-csv-sku-items",
+        generate_excel_sku_items,
+        name="generate-csv-sku-items",
     ),
+    path("company-list/", get_company_list, name="company-list"),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

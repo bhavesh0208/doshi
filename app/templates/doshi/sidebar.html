@@ -25,7 +25,7 @@
 
   <!-- Nav Item - S.K.U. Items-->
   <li class="nav-item">
-    <a class="nav-link" href="{% url 'sku-items' %}">
+    <a class="nav-link" href="{% url 'sku-items' 1 %}">
       <i class="fas fa-chart-bar"></i>
       <span>S.K.U. Items</span></a
     >
@@ -69,7 +69,7 @@
 
   <!-- Nav Item - Charts -->
   <li class="nav-item">
-    <a class="nav-link" href="{% url 'sku-items' %}">
+    <a class="nav-link" href="{% url 'sku-items' 1 %}">
       <i class="fas fa-chart-bar"></i>
       <span>S.K.U. Items</span></a
     >
@@ -96,6 +96,14 @@
     <a class="nav-link" href="{% url 'activity-logs' %}">
       <i class="fas fa-fw fa-tachometer-alt"></i>
       <span>Activity Logs</span></a
+    >
+  </li>
+
+  <!-- Nav Item - Tables -->
+  <li class="nav-item">
+    <a class="nav-link" href="{% url 'company-list' %}">
+      <i class="fas fa-building"></i>
+      <span>Company List</span></a
     >
   </li>
   {% endif %} 
