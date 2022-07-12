@@ -90,8 +90,8 @@
                         <th>Total Amount</th>
                         <th>Status</th>
                         <th>Action</th>
-                        {% if request.session.role == "ADMIN" %}
-                        <th>Dispatch</th>
+                        {% if request.session.role == "ADMIN" or request.session.role == "EMPLOYEE" %}
+                        <th>Override</th>
                         {% endif %}
                       </tr>
                     </thead>
