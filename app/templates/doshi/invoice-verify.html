@@ -118,6 +118,9 @@
                         <th>Barcode</th>
                         <th>Status</th>
                         {% comment %} <th>Action</th> {% endcomment %}
+                        {% if request.session.role == "DISPATCHER" %}
+                          <th>Dispatch</th>
+                        {% endif %}
                       </tr>
                     </thead>
 
@@ -159,6 +162,15 @@
                         </td>
                         {% endif %}
                         {% comment %} <td><button class="btn btn-sm btn-warning btn-block" data-toggle="modal" data-target="#iupdateModal">Edit</button></td> {% endcomment %}
+                        {% if request.session.role == "DISPATCHER" %}
+                        <td>
+                          <button
+                            class="btn btn-sm btn-success btn-block dispatch-stock" data-sku-barcode-no="{{ srno.sku_serial_no }}"
+                            data-sku-name = "{{ srno.sku_name}}" data-invoice-no ="{{invoice_no}}" 
+                            role="button"
+                            >Dispatch</a>
+                        </td>
+                        {% endif %}
                       </tr>
                       {% endfor %}
                     </tbody>
@@ -428,6 +440,48 @@
           },
         });
       });
+    </script>
+
+    <script>
+      $(".dispatch-stock").click(function(){
+        $(this).attr('disabled', true);
+        var sku_barcode_no = $(this).attr('data-sku-barcode-no');
+        var invoice_no = $(this).attr('data-invoice-no');
+        var sku_name = $(this).attr('data-sku-name');
+        
+        console.log(sku_barcode_no, invoice_no, sku_name);
+        $.ajax({
+          type:"GET",
+          url: "{% url 'dispatch-sku' %}",
+          data:{
+            "invoice_no": invoice_no,
+            "sku_name": sku_name,
+            "sku_barcode_no": sku_barcode_no
+
+        },
+        success: function(val){
+          console.log(val);
+          if (val["status"] === "success")
+          {
+            // console.log("helo");
+            const success_message = val['msg'];
+            var alert_element = `<div class=" m-3 alert alert-success alert-dismissible fade show" id="error-alert" role="alert"> <strong>${success_message}</strong><button type="button" class="close" data-dismiss="alert" aria-label="Close"> <span aria-hidden="true">&times;</span></button></div>`;
+              $(".container-fluid").before(alert_element);
+
+            location.reload();
+          }
+          else
+            {
+              $(this).attr('enable', true);
+              const error_message = val['msg'];
+              var alert_element = `<div class=" m-3 alert alert-danger alert-dismissible fade show" id="error-alert" role="alert"> <strong>${error_message}</strong><button type="button" class="close" data-dismiss="alert" aria-label="Close"> <span aria-hidden="true">&times;</span></button></div>`;
+                $(".container-fluid").before(alert_element);
+
+            }
+      }
+        })
+        
+      })
     </script>
   </body>
 </html>

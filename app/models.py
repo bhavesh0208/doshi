@@ -1,5 +1,3 @@
-from tkinter.tix import STATUS
-from black import Mode
 from django.db.models import *
 from django.core.validators import validate_email
 from django.contrib.auth.password_validation import validate_password
@@ -52,7 +50,6 @@ class Company(Model):
     company_contact = CharField(max_length=10, default="", blank=True)
     company_formal_name = CharField(max_length=70, default="", blank=True)
     company_email = EmailField(max_length=70, validators=[validate_email], default="")
-    # comapny_starting_from = DateField()
 
     # TO STRING METHOD
     def __str__(self):
