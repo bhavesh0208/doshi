@@ -163,13 +163,23 @@
                         {% endif %}
                         {% comment %} <td><button class="btn btn-sm btn-warning btn-block" data-toggle="modal" data-target="#iupdateModal">Edit</button></td> {% endcomment %}
                         {% if request.session.role == "DISPATCHER" %}
-                        <td>
-                          <button
-                            class="btn btn-sm btn-success btn-block dispatch-stock" data-sku-barcode-no="{{ srno.sku_serial_no }}"
-                            data-sku-name = "{{ srno.sku_name}}" data-invoice-no ="{{invoice_no}}" 
-                            role="button"
-                            >Dispatch</a>
-                        </td>
+                          {% if stk.invoice_item_scanned_status == "PENDING" %}
+                            <td>
+                              <button
+                                class="btn btn-sm btn-success btn-block dispatch-stock" data-sku-barcode-no="{{ srno.sku_serial_no }}"
+                                data-sku-name = "{{ srno.sku_name}}" data-invoice-no ="{{invoice_no}}" 
+                                role="button"
+                                >Dispatch</a>
+                            </td>
+                          {% else %}
+                            <td>
+                              <button
+                                class="btn btn-sm btn-success btn-block disabled" data-sku-barcode-no="{{ srno.sku_serial_no }}"
+                                data-sku-name = "{{ srno.sku_name}}" data-invoice-no ="{{invoice_no}}" 
+                                role="button"
+                                >Dispatch</a>
+                            </td>
+                          {% endif %}
                         {% endif %}
                       </tr>
                       {% endfor %}
@@ -469,6 +479,7 @@
               $(".container-fluid").before(alert_element);
 
             location.reload();
+            
           }
           else
             {
