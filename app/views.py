@@ -660,7 +660,7 @@ def dispatch_sku(request):
                         invoice_item_obj.invoice_item_scanned_status = "COMPLETED"
                         user = User.objects.get(id=request.session["id"])
                         print(isinstance(user, User),invoice_item_obj.invoice_item)
-                        # TODO: invoice_item_obj.invoice_user = User.objects.get(id=request.session["id"]),
+                        invoice_item_obj.invoice_user = User.objects.get(id=request.session["id"])
                         invoice_item_obj.invoice_item_total_scan = invoice_item_obj.invoice_item_qty
                         invoice_item_obj.save()
                     else:
