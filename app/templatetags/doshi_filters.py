@@ -1,5 +1,5 @@
 from django import template
-from app.models import Invoice
+from app.models import Invoice, Company
 
 register = template.Library()
 
@@ -16,8 +16,13 @@ def status(value):
     return all_status
 
 
-@register.simple_tag
-def srno(value, pg_num):
-    print(value, pg_num)
-    # request = context.get("request")
-    return "It Works!"
+@register.filter
+def get_company_name(value):
+    if value is None:
+        return "-"
+    else:
+        company = Company.objects.filter(id=int(value))
+        if company.exists():
+            return company[0].company_name
+        else:
+            return "-"

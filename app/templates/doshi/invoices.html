@@ -53,17 +53,12 @@
           <!-- Begin Page Content -->
           <div class="container-fluid">
 
-            <div
+            {% comment %} <div
                 class="d-sm-flex align-items-center justify-content-between mb-4"
               >
                 <h1 class="h3 mb-0 text-gray-800"></h1>
                 
-                <a
-                  href="{% url 'all-invoices' %}"
-                  class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"
-                  ><i class="fas fa-fw fa-table"></i>  All Invoices  </a
-                >
-            </div>
+            </div> {% endcomment %}
 
 
             <!-- DataTales Example -->
@@ -83,9 +78,10 @@
                   >
                     <thead class="thead-dark">
                       <tr>
-                        <th>Serial No</th>
+                        <th>Sr.No.</th>
                         <th>Invoice No</th>
-                        <th>Party Name</th>
+                        <th>Company Name</th>
+                        <th>Ledger Name</th>
                         <th>Date</th>
                         <th>Total Amount</th>
                         <th>Status</th>
@@ -101,6 +97,8 @@
                       <tr id="invoice-{{invoice.invoice_no}}">
                         <td>{{ forloop.counter }}</td>
                         <td>{{ invoice.invoice_no }}</td>
+                      
+                        <td>{{ invoice.invoice_company | get_company_name }}</td>
                         <td>{{ invoice.invoice_party_name }}</td>
                         <td>{{ invoice.invoice_date }}</td>
                         <td>{{ invoice.invoice_total_amount }}</td>
@@ -126,7 +124,7 @@
                         
                         <td>
                           <a
-                            href="invoice-verify/{{invoice.invoice_no }}"
+                            href="invoice-verify/{{ invoice.invoice_no }}"
                             class="btn btn-sm btn-outline-info btn-block"
                             role="button"
                             >View</a

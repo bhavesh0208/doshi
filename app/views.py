@@ -307,16 +307,17 @@ def invoices(request):
                     "invoice_party_name",
                     "invoice_date",
                     "invoice_total_amount",
+                    "invoice_company",
                 )
                 .distinct()
             )
             get_all_status = [invoice_status(i["invoice_no"]) for i in invoices]
-            bypass_data = zip(invoices, get_all_status)
+            invoice_data = zip(invoices, get_all_status)
 
             return render(
                 request,
                 "doshi/invoices.html",
-                {"invoices": bypass_data, "get_all_status": get_all_status},
+                {"invoices": invoice_data, "get_all_status": get_all_status},
             )
 
     return redirect("login")
@@ -491,6 +492,7 @@ def bypass_invoice(request):
             sku_name = request.POST["sku_name"]
             sku_against_name = request.POST["sku_against_name"]
 
+            print(invoice_no, sku_name, sku_against_name)
             sku_against_name_obj = SKUItems.objects.get(sku_name=sku_against_name)
 
             sku_name_obj = SKUItems.objects.get(sku_name=sku_name)
@@ -629,6 +631,63 @@ def update_scan_qty(request, invoice_no):
             return redirect("invoice-details", invoice_no=get_invoice_no)
 
 
+def dispatch_sku(request):
+    if "id" in request.session:
+        try:
+            role = request.session["role"]
+            if role in ["CLIENT_HCH", "CLIENT"]:
+                return redirect("sku-items", page=1)
+            elif role in ["EMPLOYEE", "ADMIN"]:
+                return redirect("invoices")
+            else:
+                if request.is_ajax:
+                    invoice_no = request.GET.get("invoice_no", None)
+                    sku_name = request.GET.get("sku_name", None)
+                    sku_barcode_no = request.GET.get("sku_barcode_no", None)
+                    
+                    invoice_sku_list = Invoice.objects.filter(
+                        invoice_no=invoice_no,
+                    )
+
+                    sku_item = SKUItems.objects.filter(
+                        sku_name=sku_name, sku_serial_no=sku_barcode_no
+                    )
+                    if sku_item.exists():
+                        invoice_item_obj = Invoice.objects.get(
+                            invoice_no=invoice_no, invoice_item=sku_item[0]
+                        )
+                        
+                        invoice_item_obj.invoice_item_scanned_status = "COMPLETED"
+                        user = User.objects.get(id=request.session["id"])
+                        print(isinstance(user, User),invoice_item_obj.invoice_item)
+                        # TODO: invoice_item_obj.invoice_user = User.objects.get(id=request.session["id"]),
+                        invoice_item_obj.invoice_item_total_scan = invoice_item_obj.invoice_item_qty
+                        invoice_item_obj.save()
+                    else:
+                        raise Exception("S.k.U. not exists.")
+                    # for item in invoice_sku_list:
+                    #     item.invoice_item_scanned_status = "COMPLETED"
+                    #     item.save()
+
+                    # user_id = request.session["id"]
+                    # user = User.objects.get(id=user_id)
+
+                    # description = f"Invoice No: {invoice_no} dispatched by {user}."
+                    # Activity.objects.create(
+                    #     activity_type="DISPATCH",
+                    #     activity_user=user,
+                    #     activity_description=description,
+                    # )
+                    return JsonResponse(
+                        {
+                            "status": "success",
+                            "msg": f"S.K.U. {sku_name} dispatched successfully.",
+                        }
+                    )
+        except Exception as e:
+            JsonResponse({"status": "error", "msg": e})
+
+
 def dispatch_invoice(request):
     if "id" in request.session:
         try:
@@ -765,3 +824,5 @@ def get_company_list(request):
         else:
             companies = Company.objects.all()
             return render(request, "doshi/companies.html", {"company_data": companies})
+    else:
+        return redirect("login")
