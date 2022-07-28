@@ -38,9 +38,9 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "django_extensions",
     "app",
-    "storages",
+    # "django_extensions",
+    # "storages",
 ]
 
 MIDDLEWARE = [
@@ -82,7 +82,7 @@ DATABASES = {
         "NAME": "doshi",
         "ENFORCE_SCHEMA": False,
         "CLIENT": {
-            "host": "mongodb+srv://doshibrothers:doshi@cluster0.ze54zmc.mongodb.net/doshi",
+            "host": "mongodb+srv://doshiprod:doshi@cluster0.ze54zmc.mongodb.net/doshi",
         },
     },
 }
