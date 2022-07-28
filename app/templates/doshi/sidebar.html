@@ -107,6 +107,7 @@
     >
   </li>
 
+  {% if request.session.role == 'ADMIN' %}
   <!-- Nav Item - Tables -->
   <li class="nav-item">
     <a class="nav-link" href="{% url 'activity-logs' %}">
@@ -114,6 +115,7 @@
       <span>Activity Logs</span></a
     >
   </li>
+  {% endif %}
 
   <!-- Nav Item - Tables -->
   <li class="nav-item">
