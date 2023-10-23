@@ -1,18 +1,12 @@
 from threading import Thread
-from barcode import EAN13, generate
-from random import randint
 from .models import *
-from io import BytesIO
-from barcode.writer import ImageWriter
 from django.conf import settings
 import os
 from django.conf import settings
 from django.core.mail import EmailMessage
-from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import date
 from zipfile import ZipFile
 import csv
-import boto3
 
 
 class EmailThread(Thread):
@@ -35,63 +29,6 @@ class EmailThread(Thread):
         if self.attachments is not None:
             e.attach_file(self.attachments)
         e.send()
-
-
-class GenerateBRCode(Thread):
-    def __init__(self):
-        Thread.__init__(self)
-
-    def run(self):
-        sku_list = SKUItems.objects.all()
-
-        for sku in sku_list:
-
-            try:
-
-                if sku.sku_barcode_image:
-                    pass
-            except Exception as ep:
-
-                print(ep)
-
-                filename = f"{sku.sku_serial_no}.jpg"
-                filepath = f"/media/barcode/{filename}"
-                print(os)
-
-                with open(filepath, "wb") as f:
-                    EAN13(sku.sku_serial_no, writer=ImageWriter()).write(f)
-
-                sku.sku_barcode_image = filepath
-
-                sku.save()
-
-
-def generate_BRC():
-    sku_list = SKUItems.objects.all()
-
-    for sku in sku_list:
-        # filename =  generate_barcode(sku.sku_serial_no)
-        filepath = "{}.jpg".format(sku.sku_serial_no)
-        # filepath = os.path.join()
-        # s3 = boto3.client("s3",  aws_access_key_id=settings.AWS_ACCESS_KEY_ID, aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY)
-        # s3.upload_file(Filename=f"./media/barcode/{filename}",Bucket=settings.AWS_STORAGE_BUCKET_NAME,Key=f"{filename}")
-
-        sku.sku_barcode_image = os.path.join(settings.MEDIA_ROOT, filepath)
-        # print(sku.sku_barcode_image)
-        sku.save()
-
-
-def generate_barcode(sno=None):
-    if sno is None:
-        sno = EAN13(str(randint(100000000000, 999999999999)), writer=ImageWriter())
-
-    filename = "{}.jpg".format(sno)
-    filepath = "./media/barcode/{}".format(filename)
-
-    with open(filepath, "wb") as f:
-        EAN13(sno, writer=ImageWriter()).write(f)
-
-    return filename
 
 
 ## Logic Incomplete @
@@ -136,7 +73,6 @@ def sendEmailReport():
                     bypass_date=today_date
                 ).values()
                 for each in bypass_data:
-
                     invoice_no = Invoice.objects.get(
                         id=each["bypass_invoice_no_id"]
                     ).invoice_no
@@ -172,18 +108,6 @@ def sendEmailReport():
             ).start()
     except Exception as e:
         print("Error in sendEmailReport -> ", e)
-
-
-def startSchedular():
-    """Create a BackgroundScheduler, and set the daemon parameter to True.
-    This allows us to kill the thread when we exit the DJANGO application."""
-    try:
-        schedular = BackgroundScheduler(deamon=True)
-        schedular.add_job(sendEmailReport, "cron", hour=1, minute=1)
-        schedular.start()
-    except Exception as e:
-        print("schedular shutdown successfully")
-        schedular.shutdown()
 
 
 def mapBaseQty(filename="sku.csv"):

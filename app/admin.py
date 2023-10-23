@@ -5,24 +5,23 @@ from .models import *
 
 
 class UserModelAdmin(admin.ModelAdmin):
-    list_display = ["id", "name", "role", "email", "password", "contact"]
+    list_display = ["_id", "name", "role", "email", "password", "contact"]
 
 
 class SKUItemsModelAdmin(admin.ModelAdmin):
     list_display = [
-        "id",
+        "_id",
         "sku_name",
         "sku_qty",
         "sku_rate",
         "sku_serial_no",
         "sku_status",
-        "sku_barcode_image",
     ]
 
 
 class InvoiceModelAdmin(admin.ModelAdmin):
     list_display = [
-        "id",
+        "_id",
         "invoice_no",
         "invoice_party_name",
         "invoice_date",
@@ -34,7 +33,7 @@ class InvoiceModelAdmin(admin.ModelAdmin):
 
 class ByPassModelAdmin(admin.ModelAdmin):
     list_display = [
-        "id",
+        "_id",
         "bypass_invoice_no",
         "bypass_sku_name",
         "bypass_against_sku_name",

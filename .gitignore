@@ -1,11 +1,9 @@
 env/
-app/__pycache__/
+__pycache__/
 app/migrations/
 mydatabase
 media/
-app/templatetags/__pycache__/
-doshi/__pycache__/
-.vscode/launch.json
-.vscode/settings.json
+.vscode/
 sku.csv
 BypassData.csv
+.env

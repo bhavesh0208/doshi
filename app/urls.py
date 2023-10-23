@@ -38,4 +38,5 @@ urlpatterns = [
         dispatch_sku,
         name="dispatch-sku",
     ),
+    # path('api/sku-items', listing_sku_api, name="sku-items-api"),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

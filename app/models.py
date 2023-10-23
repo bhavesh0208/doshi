@@ -1,16 +1,13 @@
-from django.db.models import *
+from djongo import models
 from django.core.validators import validate_email
 from django.contrib.auth.password_validation import validate_password
 from .validators import *
-from datetime import date, datetime, time
 from django.utils import timezone
-from django.contrib.auth.hashers import make_password
 
 # Create your models here.
 
 
-class User(Model):
-
+class User(models.Model):
     # CHOICES
     ROLE_ADMIN = "ADMIN"
     ROLE_EMPLOYEE = "EMPLOYEE"
@@ -26,56 +23,64 @@ class User(Model):
     )
 
     # DATABASE FIELDS
-    name = CharField(validators=[validate_name], max_length=70, default="")
-    email = EmailField(
+    _id = models.ObjectIdField()
+    name = models.CharField(validators=[validate_name], max_length=70, default="")
+    email = models.EmailField(
         max_length=70, validators=[validate_email], unique=True, default=""
     )
-    contact = CharField(
+    contact = models.CharField(
         validators=[validate_contact], unique=True, max_length=10, default=""
     )
-    password = CharField(validators=[validate_password], max_length=300, default="")
-    role = CharField(max_length=30, choices=ROLES_TYPE_CHOICES, default="EMPLOYEE")
-    status = BooleanField(default=False)
+    password = models.CharField(
+        validators=[validate_password], max_length=300, default=""
+    )
+    role = models.CharField(
+        max_length=30, choices=ROLES_TYPE_CHOICES, default="EMPLOYEE"
+    )
+    status = models.BooleanField(default=False)
 
     # TO STRING METHOD
     def __str__(self):
         return self.name
 
 
-class Company(Model):
-
+class Company(models.Model):
     # DATABASE FIELDS
-    company_name = CharField(max_length=70, default="", unique=True)
-    company_address = CharField(max_length=70, default="", blank=True)
-    company_contact = CharField(max_length=10, default="", blank=True)
-    company_formal_name = CharField(max_length=70, default="", blank=True)
-    company_email = EmailField(max_length=70, validators=[validate_email], default="")
+    _id = models.ObjectIdField()
+    company_name = models.CharField(max_length=70, default="", unique=True)
+    company_address = models.CharField(max_length=70, default="", blank=True)
+    company_contact = models.CharField(max_length=10, default="", blank=True)
+    company_formal_name = models.CharField(max_length=70, default="", blank=True)
+    company_email = models.EmailField(
+        max_length=70, validators=[validate_email], default=""
+    )
 
     # TO STRING METHOD
     def __str__(self):
         return self.company_name
 
 
-class SKUItems(Model):
-
+class SKUItems(models.Model):
     # DATABASE FIELDS
-    sku_name = CharField(max_length=100, unique=True, default="")
-    sku_qty = IntegerField(default=0)
-    sku_rate = FloatField(default=0.0)
-    sku_amount = FloatField(default=0.0)
-    sku_serial_no = CharField(default="", max_length=200, unique=True, blank=True)
-    sku_barcode_image = ImageField(upload_to="barcode/", default="backup/")
-    sku_status = BooleanField(default=True)  # True for Active and False for Inactive
-    sku_base_qty = IntegerField(default=1)
-    # sku_expiry_date = DateField(default=date.today())
+    _id = models.ObjectIdField()
+    sku_name = models.CharField(max_length=100, unique=True, default="")
+    sku_qty = models.IntegerField(default=0)
+    sku_rate = models.FloatField(default=0.0)
+    sku_amount = models.FloatField(default=0.0)
+    sku_serial_no = models.CharField(
+        default="", max_length=200, unique=True, blank=True
+    )
+    sku_status = models.BooleanField(
+        default=True
+    )  # True for Active and False for Inactive
+    sku_base_qty = models.IntegerField(default=1)
 
     # TO STRING METHOD
     def __str__(self):
         return self.sku_name
 
 
-class Invoice(Model):
-
+class Invoice(models.Model):
     # CHOICES
     STATUS_COMPLETED = "COMPLETED"
     STATUS_PENDING = "PENDING"
@@ -87,25 +92,28 @@ class Invoice(Model):
     )
 
     # DATABASE FIELDS
-    invoice_no = CharField(max_length=200, default="")
-    invoice_party_name = CharField(max_length=200, default="")
-    invoice_sales_ledger = CharField(max_length=200, default="")
-    invoice_date = DateField(auto_now_add=True)
-    invoice_item = ForeignKey(SKUItems, on_delete=DO_NOTHING, default=None, blank=True)
-    invoice_item_qty = IntegerField(default=0)
-    invoice_item_rate = CharField(max_length=200, default="")
-    invoice_item_amount = FloatField(default=0.0)
-    invoice_item_total_scan = IntegerField(default=0.0)
-    invoice_total_qty = IntegerField(default=0)
-    invoice_total_amount = FloatField(default=0.0)
-    invoice_item_scanned_status = CharField(
+    _id = models.ObjectIdField()
+    invoice_no = models.CharField(max_length=200, default="")
+    invoice_party_name = models.CharField(max_length=200, default="")
+    invoice_sales_ledger = models.CharField(max_length=200, default="")
+    invoice_date = models.DateField(auto_now_add=True)
+    invoice_item = models.ForeignKey(
+        SKUItems, on_delete=models.DO_NOTHING, default=None, blank=True
+    )
+    invoice_item_qty = models.IntegerField(default=0)
+    invoice_item_rate = models.CharField(max_length=200, default="")
+    invoice_item_amount = models.FloatField(default=0.0)
+    invoice_item_total_scan = models.IntegerField(default=0.0)
+    invoice_total_qty = models.IntegerField(default=0)
+    invoice_total_amount = models.FloatField(default=0.0)
+    invoice_item_scanned_status = models.CharField(
         max_length=30, choices=INVOICE_ITEM_STATUS, default="PENDING"
     )
-    invoice_user = ForeignKey(
-        User, on_delete=DO_NOTHING, default=None, blank=True
+    invoice_user = models.ForeignKey(
+        User, on_delete=models.DO_NOTHING, default=None, blank=True
     )  # user who created the invoice
-    invoice_company = ForeignKey(
-        Company, on_delete=DO_NOTHING, default=None, blank=True
+    invoice_company = models.ForeignKey(
+        Company, on_delete=models.DO_NOTHING, default=None, blank=True
     )
 
     # META CLASS
@@ -118,33 +126,32 @@ class Invoice(Model):
 
 
 #  Bypass SKU Quantity Same #########
-class ByPassModel(Model):
-
+class ByPassModel(models.Model):
     # DATABASE FIELDS
-    bypass_invoice_no = ForeignKey(
-        Invoice, on_delete=DO_NOTHING, default=None, blank=True
+    _id = models.ObjectIdField()
+    bypass_invoice_no = models.ForeignKey(
+        Invoice, on_delete=models.DO_NOTHING, default=None, blank=True
     )
-    bypass_sku_name = ForeignKey(
-        SKUItems, on_delete=DO_NOTHING, default=None, blank=True
+    bypass_sku_name = models.ForeignKey(
+        SKUItems, on_delete=models.DO_NOTHING, default=None, blank=True
     )
-    bypass_against_sku_name = ForeignKey(
+    bypass_against_sku_name = models.ForeignKey(
         SKUItems,
-        on_delete=CASCADE,
+        on_delete=models.CASCADE,
         default=None,
         blank=True,
         related_name="bypass_against_sku_name",
     )
-    bypass_date = DateField(default=date.today())
-    bypass_time = TimeField(auto_now_add=True)
-    # bypass_by = ForeignKey(invoice_user, on_delete=SET_NULL, default=None, blank=True)
+    bypass_date = models.DateField(default=timezone.now)
+    bypass_time = models.TimeField(auto_now_add=True)
+    # bypass_by = models.ForeignKey(invoice_user, on_delete=SET_NULL, default=None, blank=True)
 
     # TO STRING METHOD
     # def __str__(self):
     #     return self.bypass_invoice_no.invoice_no
 
 
-class Activity(Model):
-
+class Activity(models.Model):
     # CHOICES
     ACTIVITY_DISPATCH = "DISPATCH"
     ACTIVITY_EDIT = "EDIT"
@@ -154,13 +161,16 @@ class Activity(Model):
     )
 
     # DATABASE FIELDS
-    activity_type = CharField(
+    _id = models.ObjectIdField()
+    activity_type = models.CharField(
         max_length=30, choices=ACTIVITY_TYPE_CHOICES, default="DISPATCH"
     )
-    activity_description = TextField(max_length=300, blank=True)
-    activity_user = ForeignKey(User, on_delete=DO_NOTHING, default=None, blank=True)
-    activity_date = DateField(auto_now_add=True)
-    activity_time = TimeField(auto_now_add=True)
+    activity_description = models.TextField(max_length=300, blank=True)
+    activity_user = models.ForeignKey(
+        User, on_delete=models.DO_NOTHING, default=None, blank=True
+    )
+    activity_date = models.DateField(auto_now_add=True)
+    activity_time = models.TimeField(auto_now_add=True)
 
     # TO STRING METHOD
     def __str__(self):

@@ -1,25 +1,16 @@
-from email.message import Message
-from logging import raiseExceptions
-from pydoc import describe
-from urllib import response
+import csv
+import xlwt
+from datetime import date
+from random import randint
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from django.http import HttpResponse, JsonResponse, HttpResponseRedirect, HttpResponse
+from django.http import HttpResponse, JsonResponse
 from .models import *
-from django.core.mail import send_mail
-from django.core.files import File
-from random import randint
 from .validators import *
-from django.contrib.auth.password_validation import validate_password
-from django.core.validators import validate_email
-from django.conf import settings
 from .utils import *
-from django.urls import reverse
-from datetime import datetime, date
-import csv
 from django.contrib.auth.hashers import make_password, check_password
 from django.core.paginator import Paginator
-import xlwt
+from django.db.models import Q
 
 # Create your views here.
 
@@ -59,7 +50,7 @@ def index(request):
 
             return render(
                 request,
-                "doshi/index.html",
+                "index.html",
                 {
                     "total_bypass_sku": total_bypass_sku,
                     "total_sales": total_sales,
@@ -73,7 +64,6 @@ def index(request):
 
 def register(request):
     if request.method == "POST":
-
         try:
             name = request.POST["registerName"]
             email = request.POST["registerEmail"]
@@ -95,24 +85,21 @@ def register(request):
                         )
                         return redirect("login")
                     except ValidationError as e:
-
                         messages.error(request, e.message_dict.values())
                         return redirect("register")
                 else:
-                    raise Exception(
-                        "User with this contact number already exists ")
+                    raise Exception("User with this contact number already exists ")
             else:
                 raise Exception("User with this email id already exists")
         except Exception as e:
             messages.error(request, e)
             return redirect("register")
 
-    return render(request, "doshi/register.html")
+    return render(request, "register.html")
 
 
 def login(request):
     if request.method == "POST":
-
         try:
             email = request.POST["loginEmail"]
             password = request.POST["loginPassword"]
@@ -121,10 +108,11 @@ def login(request):
             if user:
                 encryptedpassword = make_password(password)
                 checkpassword = check_password(password, user.password)
-                if check_password:
+
+                if checkpassword:
                     if user.status:
                         msg = "Logged In user " + user.name
-                        request.session["id"] = user.id
+                        request.session["id"] = str(user._id)
                         request.session["name"] = user.name
                         request.session["role"] = user.role
                         if user.role in ["CLIENT_HCH", "CLIENT"]:
@@ -147,7 +135,7 @@ def login(request):
         except Exception as e:
             messages.error(request, e)
 
-    return render(request, "doshi/login.html")
+    return render(request, "login.html")
 
 
 def logout(request):
@@ -159,7 +147,6 @@ def logout(request):
 
 def forgot_password(request):
     if request.method == "POST":
-
         try:
             email = request.POST["sendOTPEmail"]
             get_usr = User.objects.get(email=email)
@@ -169,12 +156,8 @@ def forgot_password(request):
                 request.session["email"] = email
                 body = f"Please use the verification code below on the Doshi website: \n Your otp is {otp} \n If you didn't request this, you can ignore this email or let us know."
                 EmailThread("OTP Verification", body, email).start()
-                messages.success(
-                    request, "OTP sent successfully on this email id")
-                return render(
-                    request, "doshi/verify-otp.html", {
-                        "otp": otp, "email": email}
-                )
+                messages.success(request, "OTP sent successfully on this email id")
+                return render(request, "verify-otp.html", {"otp": otp, "email": email})
             else:
                 raise Exception("You are not allowed to access the portal")
         except User.DoesNotExist:
@@ -184,7 +167,7 @@ def forgot_password(request):
             messages.error(request, e)
             return redirect("forgot-password")
 
-    return render(request, "doshi/forgot-password.html")
+    return render(request, "forgot-password.html")
 
 
 def verify_otp(request):
@@ -204,7 +187,7 @@ def verify_otp(request):
             return redirect("verify-otp")
 
     if "otp" in request.session:
-        return render(request, "doshi/verify-otp.html")
+        return render(request, "verify-otp.html")
     else:
         return redirect("login")
 
@@ -220,7 +203,7 @@ def reset_password(request):
         return redirect("login")
 
     if "r-p" in request.session:
-        return render(request, "doshi/reset-password.html")
+        return render(request, "reset-password.html")
     else:
         return redirect("login")
 
@@ -236,14 +219,19 @@ def sku_items(request, page=1):
                 sku_list = SKUItems.objects.all()
             else:
                 return redirect("invoices")
-            #
+
+            query = request.GET.get("query", "")
+
+            sku_list = sku_list.filter(
+                Q(sku_name__icontains=query) | Q(sku_serial_no__icontains=query)
+            ).order_by("sku_name")
             paginator = Paginator(sku_list, 25)
             page_number = page
             sku_obj = paginator.get_page(page_number)
             sku_obj.adjusted_elided_pages = paginator.get_elided_page_range(
                 page_number, on_each_side=1
             )
-            return render(request, "doshi/sku-list.html", {"sku_obj": sku_obj})
+            return render(request, "sku-list.html", {"sku_obj": sku_obj})
         else:
             return redirect("login")
     except Exception as e:
@@ -274,7 +262,6 @@ def get_all_invoices(request):
         if role in ["CLIENT_HCH", "CLIENT"]:
             return redirect("sku-items", page=1)
         else:
-
             invoices = (
                 Invoice.objects.all()
                 .values(
@@ -286,12 +273,11 @@ def get_all_invoices(request):
                 .distinct()
             )
 
-            get_all_status = [invoice_status(
-                i["invoice_no"]) for i in invoices]
+            get_all_status = [invoice_status(i["invoice_no"]) for i in invoices]
             bypass_data = zip(invoices, get_all_status)
             return render(
                 request,
-                "doshi/all-invoices.html",
+                "all-invoices.html",
                 {"invoices": bypass_data, "get_all_status": get_all_status},
             )
 
@@ -305,8 +291,7 @@ def invoices(request):
             return redirect("sku-items", page=1)
         else:
             invoices = (
-                Invoice.objects.filter(
-                    invoice_item_scanned_status__in=["PENDING"])
+                Invoice.objects.filter(invoice_item_scanned_status__in=["PENDING"])
                 .values(
                     "invoice_no",
                     "invoice_party_name",
@@ -316,13 +301,12 @@ def invoices(request):
                 )
                 .distinct()
             )
-            get_all_status = [invoice_status(
-                i["invoice_no"]) for i in invoices]
+            get_all_status = [invoice_status(i["invoice_no"]) for i in invoices]
             invoice_data = zip(invoices, get_all_status)
 
             return render(
                 request,
-                "doshi/invoices.html",
+                "invoices.html",
                 {"invoices": invoice_data, "get_all_status": get_all_status},
             )
 
@@ -335,13 +319,10 @@ def invoice_details(request, invoice_no):
         if role in ["CLIENT_HCH", "CLIENT"]:
             return redirect("sku-items", page=1)
         else:
-
-            invoice_sku_list = Invoice.objects.filter(
-                invoice_no=str(invoice_no))
+            invoice_sku_list = Invoice.objects.filter(invoice_no=str(invoice_no))
             invoice_details = invoice_sku_list[0]
 
-            invoice_barcode_list = [
-                i.invoice_item_id for i in invoice_sku_list]
+            invoice_barcode_list = [i.invoice_item_id for i in invoice_sku_list]
 
             serial_numbers = SKUItems.objects.filter(
                 id__in=invoice_barcode_list
@@ -351,13 +332,12 @@ def invoice_details(request, invoice_no):
 
         return render(
             request,
-            "doshi/invoice-details.html",
+            "invoice-details.html",
             {"invoice_sku_list": invoice_sku, "invoice_details": invoice_details},
         )
 
 
 def bypass_products(request):
-
     if "id" in request.session:
         role = request.session["role"]
         if role in ["CLIENT_HCH", "CLIENT"]:
@@ -365,23 +345,20 @@ def bypass_products(request):
         else:
             get_bypass_list = ByPassModel.objects.all()
             return render(
-                request, "doshi/bypass-products.html", {
-                    "bypass_list": get_bypass_list}
+                request, "bypass-products.html", {"bypass_list": get_bypass_list}
             )
 
     return redirect("login")
 
 
 def invoice_verify(request, invoice_no):
-
     invoice_sku_list = Invoice.objects.filter(invoice_no=str(invoice_no))
 
     # invoice_pending_sku_list = Invoice.objects.filter(
     #     invoice_no=invoice_no, invoice_item_scanned_status__in="PENDING"
     # )
 
-    pending_invoice_barcode_list = [
-        i.invoice_item_id for i in invoice_sku_list]
+    pending_invoice_barcode_list = [i.invoice_item_id for i in invoice_sku_list]
     pending_sku_names = SKUItems.objects.filter(
         id__in=pending_invoice_barcode_list
     ).values("sku_name", "sku_serial_no")
@@ -403,7 +380,7 @@ def invoice_verify(request, invoice_no):
         else:
             return render(
                 request,
-                "doshi/invoice-verify.html",
+                "invoice-verify.html",
                 {
                     "invoice_sku_list": invoice_sku,
                     "invoice_no": invoice_no,
@@ -415,9 +392,7 @@ def invoice_verify(request, invoice_no):
 
 
 def verify_invoice(request):
-
     if request.method == "POST":
-
         try:
             invoice_no = request.POST["invoice"]
             print(request.POST)
@@ -429,14 +404,12 @@ def verify_invoice(request):
             # if not check_invoice.exists():
             #     raise Exception("All S.K.U's scanning completed")
 
-            get_sku = SKUItems.objects.get(
-                sku_serial_no=request.POST["barcode"])
+            get_sku = SKUItems.objects.get(sku_serial_no=request.POST["barcode"])
 
             get_invoice = Invoice.objects.filter(invoice_no=invoice_no)
             get_sku_id_list = [i.invoice_item_id for i in get_invoice]
 
             if get_sku.id in get_sku_id_list:
-
                 get_invoice_item = Invoice.objects.filter(
                     invoice_no=invoice_no, invoice_item_id=get_sku.id
                 )
@@ -496,7 +469,6 @@ def verify_invoice(request):
 
 
 def bypass_invoice(request):
-
     if request.method == "POST":
         try:
             invoice_no = request.POST["invoice"]
@@ -504,8 +476,7 @@ def bypass_invoice(request):
             sku_against_name = request.POST["sku_against_name"]
 
             print(invoice_no, sku_name, sku_against_name)
-            sku_against_name_obj = SKUItems.objects.get(
-                sku_name=sku_against_name)
+            sku_against_name_obj = SKUItems.objects.get(sku_name=sku_against_name)
 
             sku_name_obj = SKUItems.objects.get(sku_name=sku_name)
             # sku_against_name_obj_id = Invoice.objects.filter(invoice_ite=sku_against_name)
@@ -520,8 +491,7 @@ def bypass_invoice(request):
                 "COMPLETED",
             ]:
                 sample = (
-                    invoice_obj[0].invoice_item_total_scan +
-                    sku_name_obj.sku_base_qty
+                    invoice_obj[0].invoice_item_total_scan + sku_name_obj.sku_base_qty
                 )
                 invoice_obj.update(invoice_item_total_scan=sample)
 
@@ -580,11 +550,8 @@ def generate_csv(request):
 
     bypass_data = ByPassModel.objects.all().values()
     for each in bypass_data:
-
-        invoice_no = Invoice.objects.get(
-            id=each["bypass_invoice_no_id"]).invoice_no
-        bypass_sku_name = SKUItems.objects.get(
-            id=each["bypass_sku_name_id"]).sku_name
+        invoice_no = Invoice.objects.get(id=each["bypass_invoice_no_id"]).invoice_no
+        bypass_sku_name = SKUItems.objects.get(id=each["bypass_sku_name_id"]).sku_name
         bypass_against_sku_name = SKUItems.objects.get(
             id=each["bypass_against_sku_name_id"]
         )
@@ -613,8 +580,7 @@ def update_scan_qty(request, invoice_no):
                 invoice_item_barcode = request.POST["invoice-barcode"]
 
                 print(invoice_item_total_scan, get_invoice_no)
-                sku_obj = SKUItems.objects.get(
-                    sku_serial_no=invoice_item_barcode)
+                sku_obj = SKUItems.objects.get(sku_serial_no=invoice_item_barcode)
                 print(sku_obj)
 
                 if invoice_item_total_scan == "":
@@ -623,8 +589,7 @@ def update_scan_qty(request, invoice_no):
                     invoice_no=get_invoice_no, invoice_item_id=sku_obj.id
                 )
                 print(sku_obj, invoice_item_barcode, invoice_item_total_scan)
-                invoice_obj.update(
-                    invoice_item_total_scan=invoice_item_total_scan)
+                invoice_obj.update(invoice_item_total_scan=invoice_item_total_scan)
 
                 if int(invoice_obj[0].invoice_item_total_scan) == int(
                     invoice_obj[0].invoice_item_qty
@@ -676,11 +641,13 @@ def dispatch_sku(request):
 
                         invoice_item_obj.invoice_item_scanned_status = "COMPLETED"
                         user = User.objects.get(id=request.session["id"])
-                        print(isinstance(user, User),
-                              invoice_item_obj.invoice_item)
+                        print(isinstance(user, User), invoice_item_obj.invoice_item)
                         invoice_item_obj.invoice_user = User.objects.get(
-                            id=request.session["id"])
-                        invoice_item_obj.invoice_item_total_scan = invoice_item_obj.invoice_item_qty
+                            id=request.session["id"]
+                        )
+                        invoice_item_obj.invoice_item_total_scan = (
+                            invoice_item_obj.invoice_item_qty
+                        )
                         invoice_item_obj.save()
                     else:
                         raise Exception("S.k.U. not exists.")
@@ -718,8 +685,7 @@ def dispatch_invoice(request):
             else:
                 if request.is_ajax:
                     invoice_no = request.GET.get("invoice_no", None)
-                    invoice_sku_list = Invoice.objects.filter(
-                        invoice_no=invoice_no)
+                    invoice_sku_list = Invoice.objects.filter(invoice_no=invoice_no)
                     for item in invoice_sku_list:
                         item.invoice_item_scanned_status = "COMPLETED"
                         item.save()
@@ -788,8 +754,7 @@ def get_activity_logs(request):
             activity_data = Activity.objects.all()
 
             return render(
-                request, "doshi/activity-logs.html", {
-                    "activity_data": activity_data}
+                request, "activity-logs.html", {"activity_data": activity_data}
             )
     return redirect("login")
 
@@ -846,6 +811,34 @@ def get_company_list(request):
             return redirect("invoices")
         else:
             companies = Company.objects.all()
-            return render(request, "doshi/companies.html", {"company_data": companies})
+            return render(request, "companies.html", {"company_data": companies})
     else:
         return redirect("login")
+
+
+# def listing_sku_api(request):
+#     if "id" in request.session:
+#         page_number = request.GET.get("page", 1)
+#         startswith = request.GET.get("startswith", "")
+#         sku_list = SKUItems.objects.filter(sku_name__startswith=startswith).order_by('sku_name')
+#         paginator = Paginator(sku_list, 25)
+#         page_obj = paginator.get_page(page_number)
+
+#         data = [{
+#                     "sku-name": i.sku_name,
+#                     "sku-qty": i.sku_qty
+#                 }
+#                 for i in page_obj.object_list
+#                 ]
+
+#         payload = {
+#             "page":{
+#                 "current": page_obj.number,
+#                 "has_next":page_obj.has_next(),
+#                 "has_previous":page_obj.has_previous()
+#             },
+#             "data": data
+#         }
+#         return JsonResponse(payload)
+#     else:
+#         return redirect("login")
