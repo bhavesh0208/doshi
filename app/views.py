@@ -9,15 +9,18 @@ from .models import *
 from .validators import *
 from .utils import *
 from django.contrib.auth.hashers import make_password, check_password
+from django.contrib.auth import login, authenticate, logout, get_user_model
 from django.core.paginator import Paginator
 from django.db.models import Q
+
 
 # Create your views here.
 
 
 def index(request):
-    if "id" in request.session:
-        role = request.session["role"]
+    if request.user.is_authenticated:
+        # role = request.session["role"]
+        role = "EMPLOYEE"
         if role in ["CLIENT_HCH", "CLIENT"]:
             return redirect("sku-items", page=1)
         elif role in ["DISPATCHER"]:
@@ -65,83 +68,58 @@ def index(request):
 def register(request):
     if request.method == "POST":
         try:
-            name = request.POST["registerName"]
-            email = request.POST["registerEmail"]
-            contact = request.POST["registerContact"]
-            password = request.POST["registerPassword"]
+            name = request.POST.get("registerName")
+            email = request.POST.get("registerEmail")
+            contact = request.POST.get("registerContact")
+            password = request.POST.get("registerPassword")
+            data = {
+                "name": name,
+                "email": email,
+                "contact": contact,
+                "password": password,
+            }
+            user = User(**data)
+            user.full_clean()
+            User.objects.create_user(**data)
+            return redirect("login")
 
-            if User.objects.filter(email=email).count() == 0:
-                if User.objects.filter(contact=contact).count() == 0:
-                    try:
-                        User(
-                            name=name, email=email, contact=contact, password=password
-                        ).full_clean()
-                        encryptedpassword = make_password(password)
-                        User.objects.create(
-                            name=name,
-                            email=email,
-                            contact=contact,
-                            password=encryptedpassword,
-                        )
-                        return redirect("login")
-                    except ValidationError as e:
-                        messages.error(request, e.message_dict.values())
-                        return redirect("register")
-                else:
-                    raise Exception("User with this contact number already exists ")
-            else:
-                raise Exception("User with this email id already exists")
+        except ValidationError as ve:
+            for err in ve.message_dict.values():
+                messages.error(request, str(err[0]))
+            return redirect("register")
         except Exception as e:
-            messages.error(request, e)
+            messages.error(request, str(e))
             return redirect("register")
 
     return render(request, "register.html")
 
 
-def login(request):
+def login_user(request):
     if request.method == "POST":
         try:
             email = request.POST["loginEmail"]
             password = request.POST["loginPassword"]
-            user = User.objects.get(email=email)
+            user = authenticate(username=email, password=password)
 
-            if user:
-                encryptedpassword = make_password(password)
-                checkpassword = check_password(password, user.password)
+            if user is None:
+                messages.error(request, "Invalid email or password.")
+                return redirect("login")
+            elif not user.is_active:
+                messages.error(request, "You are not allowed to access the portal")
+                return redirect("login")
+            else:
+                login(request, user)
+                return redirect("index")
 
-                if checkpassword:
-                    if user.status:
-                        msg = "Logged In user " + user.name
-                        request.session["id"] = str(user._id)
-                        request.session["name"] = user.name
-                        request.session["role"] = user.role
-                        if user.role in ["CLIENT_HCH", "CLIENT"]:
-                            return redirect("sku-items", page=1)
-                        elif user.role in ["DISPATCHER"]:
-                            return redirect("invoices")
-                        else:
-                            return redirect("index")
-                    else:
-                        messages.error(
-                            request, "You are not allowed to access the portal"
-                        )
-                        return redirect("login")
-                else:
-                    messages.error(request, "Invalid Password")
-                    return redirect("login")
-        except User.DoesNotExist as e:
-            msg = "Invalid User"
-            messages.error(request, msg)
         except Exception as e:
             messages.error(request, e)
 
     return render(request, "login.html")
 
 
-def logout(request):
-    if "id" in request.session:
-        request.session.flush()
-
+def logout_user(request):
+    if request.user:
+        logout(request)
     return redirect("login")
 
 
@@ -149,8 +127,8 @@ def forgot_password(request):
     if request.method == "POST":
         try:
             email = request.POST["sendOTPEmail"]
-            get_usr = User.objects.get(email=email)
-            if get_usr.status:
+            get_user = User.objects.get(email=email)
+            if get_user.is_active:
                 otp = randint(1000, 9999)
                 request.session["otp"] = otp
                 request.session["email"] = email

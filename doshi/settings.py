@@ -1,13 +1,21 @@
 from pathlib import Path
 import os
+import environ
+
+myenv = environ.Env(
+    # set casting, default value
+    DEBUG=(bool, False)
+)
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = "django-insecure-&8$w1t%eunnmnz18zeqe8gx4p74p7-p3))y_ai_e!e46)ux7k$"
+environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 
+SECRET_KEY = myenv("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = myenv("DEBUG")
 
 ALLOWED_HOSTS = ["*"]
 
@@ -53,18 +61,19 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "doshi.wsgi.application"
+AUTH_USER_MODEL = "app.User"
 
+AUTHENTICATION_BACKENDS = ["app.backends.EmailBackend"]
 
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 DATABASES = {
     "default": {
-        "ENGINE": "djongo",
-        "NAME": "doshi",
-        # "NAME": "stackoverflow",
+        "ENGINE": myenv("DB_ENGINE"),
+        "NAME": myenv("DB_NAME"),
         "ENFORCE_SCHEMA": False,
         "CLIENT": {
-            "host": "mongodb+srv://root:root@cluster0.dg1orlw.mongodb.net/",
+            "host": myenv("MONGODB_HOST_URL"),
         },
     },
 }
@@ -118,20 +127,11 @@ else:
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# customize datetime format
 
 # SMTP Configuration
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = "smtp.gmail.com"
-EMAIL_PORT = "587"
+EMAIL_BACKEND = myenv("EMAIL_BACKEND")
+EMAIL_HOST = myenv("EMAIL_HOST")
+EMAIL_PORT = myenv("EMAIL_PORT")
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = "djangodeveloper09@gmail.com"
-EMAIL_HOST_PASSWORD = "gljvtlcrrdfemcbw"  # Django@123456
-
-
-# AWS S3 Storage
-AWS_ACCESS_KEY_ID = "AKIARLXGH5CSVAHHWR7Z"
-AWS_SECRET_ACCESS_KEY = "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"
-DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
-AWS_STORAGE_BUCKET_NAME = "doshi-media"
-AWS_S3_REGION_NAME = "ap-south-1"
+EMAIL_HOST_USER = myenv("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = myenv("EMAIL_HOST_PASSWORD")

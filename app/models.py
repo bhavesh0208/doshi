@@ -1,13 +1,33 @@
+from .validators import *
 from djongo import models
 from django.core.validators import validate_email
-from django.contrib.auth.password_validation import validate_password
-from .validators import *
 from django.utils import timezone
+from django.contrib.auth.models import (
+    AbstractBaseUser,
+    PermissionsMixin,
+    BaseUserManager,
+)
 
-# Create your models here.
+
+class UserManager(BaseUserManager):
+    def create_user(self, email, password=None, **extra_fields):
+        if not email:
+            raise ValueError("This object requires an email")
+        user = self.model(email=self.normalize_email(email), **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, email, password):
+        user = self.create_user(email, password)
+        user.is_staff = True
+        user.is_superuser = True
+        user.is_active = True
+        user.save(using=self._db)
+        return user
 
 
-class User(models.Model):
+class User(AbstractBaseUser, PermissionsMixin):
     # CHOICES
     ROLE_ADMIN = "ADMIN"
     ROLE_EMPLOYEE = "EMPLOYEE"
@@ -31,13 +51,14 @@ class User(models.Model):
     contact = models.CharField(
         validators=[validate_contact], unique=True, max_length=10, default=""
     )
-    password = models.CharField(
-        validators=[validate_password], max_length=300, default=""
-    )
     role = models.CharField(
-        max_length=30, choices=ROLES_TYPE_CHOICES, default="EMPLOYEE"
+        max_length=30, choices=ROLES_TYPE_CHOICES, default=ROLE_EMPLOYEE
     )
-    status = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=False)
+    is_staff = models.BooleanField(default=False)
+
+    objects = UserManager()
+    USERNAME_FIELD = "email"
 
     # TO STRING METHOD
     def __str__(self):
