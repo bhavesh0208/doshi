@@ -5,7 +5,7 @@ from .models import *
 
 
 class UserModelAdmin(admin.ModelAdmin):
-    list_display = ["_id", "name", "role", "email", "password", "contact"]
+    list_display = ["_id", "name", "role", "email", "contact", "is_active"]
 
 
 class SKUItemsModelAdmin(admin.ModelAdmin):

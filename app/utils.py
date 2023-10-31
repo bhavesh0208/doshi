@@ -2,11 +2,28 @@ from threading import Thread
 from .models import *
 from django.conf import settings
 import os
-from django.conf import settings
 from django.core.mail import EmailMessage
 from datetime import date
 from zipfile import ZipFile
 import csv
+from django.contrib.auth import get_user_model
+
+
+def check_user(email: str):
+    """
+    The function checks if a user with a given email exists in the database and returns the user object
+    if found, otherwise returns None.
+
+    :param email: The email parameter is a string that represents the email address of a user
+    :type email: str
+    :return: either an instance of the User model if a user with the specified email exists, or None if
+    no user with the specified email exists.
+    """
+    try:
+        user_model = get_user_model()
+        return user_model.objects.get(email=email)
+    except user_model.DoesNotExist:
+        return None
 
 
 class EmailThread(Thread):
@@ -18,7 +35,7 @@ class EmailThread(Thread):
         Thread.__init__(self)
 
     def run(self):
-        from_email = "djangodeveloper09@gmail.com"
+        from_email = settings.DEFAULT_FROM_EMAIL
         to = self.email
 
         if isinstance(to, str):
