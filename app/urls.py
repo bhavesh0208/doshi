@@ -1,15 +1,18 @@
 from django.urls import path
 from django.conf.urls.static import static
-from .views import *
+from app.views import *
 
 urlpatterns = [
     path("", index, name="index"),
+    # User Related Views
     path("register/", register, name="register"),
     path("login/", login_user, name="login"),
     path("logout/", logout_user, name="logout"),
     path("forgot-password/", forgot_password, name="forgot-password"),
     path("verify-otp/", verify_otp, name="verify-otp"),
-    path("reset-password/", reset_password, name="reset-password"),
+    path("reset-password/<uidb64>/<token>/", reset_password, name="reset-password"),
+
+    # Webportal content urls
     path("sku-items/<int:page>", sku_items, name="sku-items"),
     path("invoices/", invoices, name="invoices"),
     path("all-invoices/", get_all_invoices, name="all-invoices"),

@@ -10,7 +10,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>Doshi Brothers | Reset Password</title>
+    <title>Doshi Brothers | Verify OTP</title>
 
     <!-- Custom fonts for this template-->
     <link href="{% static 'assets/vendor/fontawesome-free/css/all.min.css' %}" rel="stylesheet" type="text/css">
@@ -20,7 +20,38 @@
 
     <!-- Custom styles for this template-->
     <link href="{% static 'assets/css/sb-admin-2.min.css' %}" rel="stylesheet">
-
+    <style>
+        .otp-field {
+            flex-direction: row;
+            column-gap: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .otp-field input {
+            height: 45px;
+            width: 42px;
+            border-radius: 6px;
+            outline: none;
+            font-size: 1.125rem;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+        
+        .otp-field input:focus {
+            box-shadow: 0 1px 0 rgba(0, 0, 0, 0.1);
+        }
+        
+        .otp-field input::-webkit-inner-spin-button,
+        .otp-field input::-webkit-outer-spin-button {
+            display: none;
+        }
+        
+        .resend {
+            font-size: 12px;
+        }
+    </style>
 </head>
 
 <body class="bg-gradient-primary">
@@ -46,7 +77,7 @@
                                         <h1 class="h4 text-gray-900 mb-2">Verify OTP</h1>
                                         
                                     </div>
-                                    <form method="post" action="{% url 'verify-otp' %}" class="user needs-validation" novalidate>
+                                    {% comment %} <form method="post" action="{% url 'verify-otp' %}" class="user needs-validation" novalidate>
                                         
                                         
 
@@ -74,21 +105,70 @@
 
                                         {% csrf_token %}
                                         <div class="form-group">
-                                            <div class="form-group">
+                                             <div class="form-group">
                                                 <input type="text" class="form-control form-control-user" pattern="[0-9]{4}" name="verifyOTP"
                                                     id="verifyInputOTP" placeholder="Enter OTP" required>
                                                     <div class=" ml-3 valid-feedback"> Looks good!</div>
                                                     <div class=" ml-3 invalid-feedback">Please provide a valid 4 digit OTP.</div>
-                                            </div>
+                                            </div> 
                                         </div>
 
                                         <button type="submit" class="btn btn-primary btn-user btn-block" id="btnVerifyOTP">
                                             Verify OTP
                                         </button>
+
+
                                         
                                     </form>
                                 
-                                    
+                                     {% endcomment %}
+                                     {% if messages %}
+                                            {% for message in messages %}
+                                                {% if message.tags == "success" %}
+                                                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert" id="otpAlert">
+                                                        
+                                                            <strong>{{ message }}</strong>
+                                                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                                                <span aria-hidden="true">&times;</span>
+                                                            </button>
+                                                    </div>
+                                                {% else %}
+                                                    <div class="alert alert-danger alert-dismissible fade show" role="alert" id="otpAlert">
+                                                        
+                                                        <strong>{{ message }}</strong>
+                                                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                                            <span aria-hidden="true">&times;</span>
+                                                        </button>
+                                                    </div>
+                                                {% endif %}
+                                            {% endfor %}
+                                        {% endif %}
+                                     <div class="card bg-white mb-5 border-0">
+                                        
+                                        <div class="card-body p-4 text-center">
+                                          <p>Your code was sent to you via email</p>
+                                          <form action="{% url 'verify-otp' %}" method="post">
+                                            <div class="otp-field mb-4">
+                                                {% csrf_token %}
+                                                <input type="text" maxlength="1" pattern="\d" name="code_1"/>
+                                                <input type="text" maxlength="1" pattern="\d" name="code_2" disabled />
+                                                <input type="text" maxlength="1" pattern="\d" name="code_3" disabled />
+                                                <input type="text" maxlength="1" pattern="\d" name="code_4" disabled />
+                                                <input type="text" maxlength="1" pattern="\d" name="code_5" disabled />
+                                                <input type="text" maxlength="1" pattern="\d" name="code_6" disabled />
+                                            </div>
+                                
+                                            <button class="btn btn-primary mb-3" type="submit">
+                                                Verify
+                                            </button>
+                                        </form>
+                                          <p class="resend text-muted mb-0">
+                                            Didn't receive code? <a href="">Request again</a>
+                                          </p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
                                 </div>
                             </div>
                         </div>
@@ -112,24 +192,75 @@
     <script src="{% static 'assets/js/sb-admin-2.min.js' %}"></script>
     
     <script>
-        // Example starter JavaScript for disabling form submissions if there are invalid fields
-        (function() {
-          'use strict';
-          window.addEventListener('load', function() {
-            // Fetch all the forms we want to apply custom Bootstrap validation styles to
-            var forms = document.getElementsByClassName('needs-validation');
-            // Loop over them and prevent submission
-            var validation = Array.prototype.filter.call(forms, function(form) {
-              form.addEventListener('submit', function(event) {
-                if (form.checkValidity() === false) {
-                  event.preventDefault();
-                  event.stopPropagation();
-                }
-                form.classList.add('was-validated');
-              }, false);
+        const inputs = document.querySelectorAll(".otp-field > input");
+        const button = document.querySelector(".btn");
+
+        window.addEventListener("load", () => inputs[0].focus());
+        button.setAttribute("disabled", "disabled");
+
+        inputs[0].addEventListener("paste", function (event) {
+        event.preventDefault();
+
+        const pastedValue = (event.clipboardData || window.clipboardData).getData(
+        "text"
+        );
+        const otpLength = inputs.length;
+
+        for (let i = 0; i < otpLength; i++) {
+        if (i < pastedValue.length) {
+            inputs[i].value = pastedValue[i];
+            inputs[i].removeAttribute("disabled");
+            inputs[i].focus;
+        } else {
+            inputs[i].value = ""; // Clear any remaining inputs
+            inputs[i].focus;
+        }
+        }
+        });
+
+        inputs.forEach((input, index1) => {
+        input.addEventListener("keyup", (e) => {
+        const currentInput = input;
+        const nextInput = input.nextElementSibling;
+        const prevInput = input.previousElementSibling;
+
+        if (currentInput.value.length > 1) {
+            currentInput.value = "";
+            return;
+        }
+
+        if (
+            nextInput &&
+            nextInput.hasAttribute("disabled") &&
+            currentInput.value !== ""
+        ) {
+            nextInput.removeAttribute("disabled");
+            nextInput.focus();
+        }
+
+        if (e.key === "Backspace") {
+            inputs.forEach((input, index2) => {
+            if (index1 <= index2 && prevInput) {
+                input.setAttribute("disabled", true);
+                input.value = "";
+                prevInput.focus();
+            }
             });
-          }, false);
-        })();
+        }
+
+        button.classList.remove("active");
+        button.setAttribute("disabled", "disabled");
+
+        const inputsNo = inputs.length;
+        if (!inputs[inputsNo - 1].disabled && inputs[inputsNo - 1].value !== "") {
+            button.classList.add("active");
+            button.removeAttribute("disabled");
+
+            return;
+        }
+        });
+        });
+
     </script>
 </body>
 

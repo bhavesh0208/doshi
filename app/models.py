@@ -1,12 +1,21 @@
-from .validators import *
-from djongo import models
-from django.core.validators import validate_email
-from django.utils import timezone
+from datetime import timedelta
+
 from django.contrib.auth.models import (
     AbstractBaseUser,
-    PermissionsMixin,
     BaseUserManager,
+    PermissionsMixin,
 )
+from django.core.mail import send_mail
+from django.core.validators import validate_email
+from django.template.loader import get_template
+from django.utils import timezone
+from django.contrib.auth import get_user_model
+from djongo import models
+
+from app.otp import OtpVerification
+from doshi import settings
+
+from .validators import *
 
 
 class UserManager(BaseUserManager):
@@ -18,12 +27,14 @@ class UserManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, email, password):
-        user = self.create_user(email, password)
+    def create_superuser(self, email, password, **extra_fields):
+        user = self.create_user(email, password, **extra_fields)
         user.is_staff = True
         user.is_superuser = True
         user.is_active = True
+        user.role = "ADMIN"
         user.save(using=self._db)
+
         return user
 
 
@@ -58,6 +69,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
 
     objects = UserManager()
+    REQUIRED_FIELDS = ["name", "contact"]
     USERNAME_FIELD = "email"
 
     # TO STRING METHOD
@@ -196,3 +208,85 @@ class Activity(models.Model):
     # TO STRING METHOD
     def __str__(self):
         self.activity_description
+
+
+class OTP(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    otp_secret = models.CharField(max_length=16)
+    email = models.EmailField(unique=True)
+    is_verified = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    # valid_till = models.DateTimeField()
+
+    def __str__(self):
+        return self.email
+
+    def send_forgot_password_otp_email(self):
+        user = self.get_user_by_email(self.email)
+        context = {}
+        if user:
+            totp = OtpVerification(
+                token_validity_period=settings.OTP_EMAIL_TOKEN_VALIDITY
+            )
+            self.token = totp.generate_token()
+            self.user = user
+            self.otp_secret = totp.key
+            self.email = user.email
+
+            if not user.is_active:
+                raise Exception(
+                    "Access to the portal is restricted and requires contacting the administrator."
+                )
+            # self.otp = OTP(user=self.user, token=self.token)
+            try:
+                self.otp, created = self.__class__.objects.get_or_create(
+                    email=self.email,
+                    defaults={"user": self.user, "otp_secret": self.otp_secret},
+                )
+                if not created:
+                    self.otp.otp_secret = self.otp_secret
+                    self.otp.save()
+            except Exception as e:
+                print(f"Exception Occoured {e}")
+                pass
+
+            context.update({"token": self.token})
+            if settings.OTP_EMAIL_BODY_TEMPLATE_PATH:
+                body_html = get_template(settings.OTP_EMAIL_BODY_TEMPLATE_PATH).render(
+                    context
+                )
+            else:
+                body_html = None
+
+            body = None
+            send_mail(
+                "OTP Verification",
+                body,
+                settings.DEFAULT_FROM_EMAIL,
+                [self.email],
+                html_message=body_html,
+            )
+            return True
+        else:
+            raise Exception(f"User with given email {self.email} doesn't exist")
+
+    def verify_otp(self, otp: str):
+        totp = OtpVerification(key=self.otp_secret)
+        return totp.verify_otp(otp)
+
+    @staticmethod
+    def get_user_by_email(email: str):
+        """
+        The function checks if a user with a given email exists in the database and returns the user object
+        if found, otherwise returns None.
+
+        :param email: The email parameter is a string that represents the email address of a user
+        :type email: str
+        :return: either an instance of the User model if a user with the specified email exists, or None if
+        no user with the specified email exists.
+        """
+        try:
+            UserModel = get_user_model()
+            return UserModel.objects.get(email=email)
+        except UserModel.DoesNotExist:
+            return None

@@ -1,20 +1,25 @@
 import csv
-import xlwt
 from datetime import date
-from random import randint
-from django.shortcuts import render, redirect
+
+import xlwt
 from django.contrib import messages
-from django.http import HttpResponse, JsonResponse
-from .models import *
-from .validators import *
-from .utils import *
-from django.contrib.auth.hashers import make_password, check_password
-from django.contrib.auth import login, authenticate, logout, get_user_model
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.tokens import default_token_generator
+from django.core.exceptions import ImproperlyConfigured
 from django.core.paginator import Paginator
 from django.db.models import Q
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import redirect, render
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 
+from app.models import *
+from app.utils import *
+from app.validators import *
 
 # Create your views here.
+INTERNAL_RESET_SESSION_TOKEN = "_password_reset_token"
+token_generator = default_token_generator
 
 
 def index(request):
@@ -127,21 +132,21 @@ def forgot_password(request):
     if request.method == "POST":
         try:
             email = request.POST["sendOTPEmail"]
-            get_user = User.objects.get(email=email)
-            if get_user.is_active:
-                otp = randint(1000, 9999)
-                request.session["otp"] = otp
-                request.session["email"] = email
-                body = f"Please use the verification code below on the Doshi website: \n Your otp is {otp} \n If you didn't request this, you can ignore this email or let us know."
-                EmailThread("OTP Verification", body, email).start()
+            user = OTP.get_user_by_email(email)
+            if user:
+                otp_obj, created = OTP.objects.get_or_create(
+                    email=user.email, user=user, defaults={"is_verfied": False}
+                )
+                if not created:
+                    otp_obj.is_verified = False
+                    otp_obj.save()
+                sent_status = otp_obj.send_forgot_password_otp_email(email=email)
+                response = redirect("verify-otp")
+                response.set_cookie("user-email", email)
                 messages.success(request, "OTP sent successfully on this email id")
-                return render(request, "verify-otp.html", {"otp": otp, "email": email})
-            else:
-                raise Exception("You are not allowed to access the portal")
-        except User.DoesNotExist:
-            messages.error(request, "User does not exists")
-            return redirect("forgot-password")
+                return response
         except Exception as e:
+            print(f"{e}")
             messages.error(request, e)
             return redirect("forgot-password")
 
@@ -151,44 +156,105 @@ def forgot_password(request):
 def verify_otp(request):
     if request.method == "POST":
         try:
-            verify_otp = request.POST["verifyOTP"]
-            if "otp" in request.session:
-                if int(verify_otp) == int(request.session["otp"]):
-                    messages.success(request, "OTP verification successful")
-                    del request.session["otp"]
-                    request.session["r-p"] = "12345"
-                    return redirect("reset-password")
-                else:
-                    raise Exception("Invalid OTP ")
+            code_1 = request.POST.get("code_1")
+            code_2 = request.POST.get("code_2")
+            code_3 = request.POST.get("code_3")
+            code_4 = request.POST.get("code_4")
+            code_5 = request.POST.get("code_5")
+            code_6 = request.POST.get("code_6")
+            otp = code_1 + code_2 + code_3 + code_4 + code_5 + code_6
+            validate_otp(otp)
+            email = request.COOKIES.get("user-email")
+            instance = OTP.objects.get(email=email)
+            verify = instance.verify_otp(otp)
+            if verify:
+                instance.is_verified = True
+                instance.save()
+                uidb64 = urlsafe_base64_encode(force_bytes(instance.user.pk))
+                token = token_generator.make_token(instance.user)
+                response = redirect("reset-password", uidb64=uidb64, token=token)
+
+                response.delete_cookie("user-email")
+                return response
+            else:
+                raise Exception("Invalid OTP")
+
         except Exception as e:
             messages.error(request, e)
             return redirect("verify-otp")
 
-    if "otp" in request.session:
-        return render(request, "verify-otp.html")
-    else:
-        return redirect("login")
+    if request.method == "GET":
+        if "user-email" in request.COOKIES:
+            return render(request, "verify-otp.html")
+        else:
+            return redirect("login")
 
 
-def reset_password(request):
+def reset_password(request, **kwargs):
+    UserModel = get_user_model()
+    reset_url_token = "set-password"
+
+    def get_user_from_uidb64(uidb64):
+        try:
+            # urlsafe_base64_decode() decodes to bytestring
+            from bson import ObjectId
+
+            uid = urlsafe_base64_decode(uidb64).decode()
+            user = UserModel._default_manager.get(_id=ObjectId(uid))
+        except (
+            TypeError,
+            ValueError,
+            OverflowError,
+            UserModel.DoesNotExist,
+            ValidationError,
+        ):
+            user = None
+        return user
+
+    if request.method == "GET":
+        if "uidb64" not in kwargs or "token" not in kwargs:
+            raise ImproperlyConfigured(
+                "The URL path must contain 'uidb64' and 'token' parameters."
+            )
+
+        user = get_user_from_uidb64(kwargs["uidb64"])
+
+        if user is not None:
+            token = kwargs["token"]
+            if token == reset_url_token:
+                session_token = request.session.get(INTERNAL_RESET_SESSION_TOKEN)
+                if token_generator.check_token(user, session_token):
+                    # If the token is valid, display the password reset form
+                    return render(request, "reset-password.html")
+            else:
+                if token_generator.check_token(user, token):
+                    # Store the token in the session and redirect to the
+                    # password reset form at a URL without the token. That
+                    # avoids the possibility of leaking the token in the
+                    # HTTP Referer header.
+                    request.session[INTERNAL_RESET_SESSION_TOKEN] = token
+                    redirect_url = request.path.replace(token, reset_url_token)
+                    return redirect(redirect_url)
+        else:
+            messages.error(request, "Password reset unsuccessful.")
+            return redirect("login")
+
     if request.method == "POST":
         password = request.POST["newPassword"]
-        get_user = User.objects.get(email=request.session["email"])
-
-        get_user.password = make_password(password)
-        get_user.save()
-        del request.session["r-p"]
-        return redirect("login")
-
-    if "r-p" in request.session:
-        return render(request, "reset-password.html")
-    else:
+        uidb64 = request.resolver_match.kwargs.get("uidb64")
+        user = get_user_from_uidb64(uidb64)
+        session_token = request.session.get(INTERNAL_RESET_SESSION_TOKEN)
+        if token_generator.check_token(user, session_token):
+            user.set_password(password)
+            user.save()
+            del request.session[INTERNAL_RESET_SESSION_TOKEN]
+        messages.success(request, "password reset successful.")
         return redirect("login")
 
 
 def sku_items(request, page=1):
     try:
-        if "id" in request.session:
+        if request.user.is_authenticated:
             role = request.session["role"]
 
             if role == "CLIENT_HCH":
@@ -235,7 +301,7 @@ def invoice_status(invoice_no):
 
 
 def get_all_invoices(request):
-    if "id" in request.session:
+    if request.user.is_authenticated:
         role = request.session["role"]
         if role in ["CLIENT_HCH", "CLIENT"]:
             return redirect("sku-items", page=1)
@@ -263,7 +329,7 @@ def get_all_invoices(request):
 
 
 def invoices(request):
-    if "id" in request.session:
+    if request.user.is_authenticated:
         role = request.session["role"]
         if role in ["CLIENT_HCH", "CLIENT"]:
             return redirect("sku-items", page=1)
@@ -292,7 +358,7 @@ def invoices(request):
 
 
 def invoice_details(request, invoice_no):
-    if "id" in request.session:
+    if request.user.is_authenticated:
         role = request.session["role"]
         if role in ["CLIENT_HCH", "CLIENT"]:
             return redirect("sku-items", page=1)
@@ -316,7 +382,7 @@ def invoice_details(request, invoice_no):
 
 
 def bypass_products(request):
-    if "id" in request.session:
+    if request.user.is_authenticated:
         role = request.session["role"]
         if role in ["CLIENT_HCH", "CLIENT"]:
             return redirect("sku-items", page=1)
@@ -550,7 +616,7 @@ def generate_csv(request):
 
 # Rework on  this logic -> need to improve
 def update_scan_qty(request, invoice_no):
-    if "id" in request.session:
+    if request.user.is_authenticated:
         try:
             if request.method == "POST":
                 get_invoice_no = invoice_no
@@ -592,7 +658,7 @@ def update_scan_qty(request, invoice_no):
 
 
 def dispatch_sku(request):
-    if "id" in request.session:
+    if request.user.is_authenticated:
         try:
             role = request.session["role"]
             if role in ["CLIENT_HCH", "CLIENT"]:
@@ -653,7 +719,7 @@ def dispatch_sku(request):
 
 
 def dispatch_invoice(request):
-    if "id" in request.session:
+    if request.user.is_authenticated:
         try:
             role = request.session["role"]
             if role in ["CLIENT_HCH", "CLIENT"]:
@@ -690,7 +756,7 @@ def dispatch_invoice(request):
 
 
 def update_sku(request):
-    if "id" in request.session:
+    if request.user.is_authenticated:
         try:
             if request.method == "POST":
                 sku_serial_no = request.POST["update-sku-srno"]
@@ -720,7 +786,7 @@ def update_sku(request):
 
 
 def get_activity_logs(request):
-    if "id" in request.session:
+    if request.user.is_authenticated:
         role = request.session["role"]
         if role in ["CLIENT_HCH", "CLIENT"]:
             return redirect("sku-items", page=1)
@@ -738,7 +804,7 @@ def get_activity_logs(request):
 
 
 def generate_excel_sku_items(request):
-    if "id" in request.session:
+    if request.user.is_authenticated:
         role = request.session["role"]
 
         response = HttpResponse(content_type="application/ms-excel")
@@ -781,7 +847,7 @@ def generate_excel_sku_items(request):
 
 
 def get_company_list(request):
-    if "id" in request.session:
+    if request.user.is_authenticated:
         role = request.session["role"]
         if role in ["CLIENT_HCH", "CLIENT"]:
             return redirect("sku-items", page=1)
@@ -795,7 +861,7 @@ def get_company_list(request):
 
 
 # def listing_sku_api(request):
-#     if "id" in request.session:
+#     if request.user.is_authenticated:
 #         page_number = request.GET.get("page", 1)
 #         startswith = request.GET.get("startswith", "")
 #         sku_list = SKUItems.objects.filter(sku_name__startswith=startswith).order_by('sku_name')
