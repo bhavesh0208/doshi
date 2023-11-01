@@ -5,10 +5,18 @@ from .models import *
 
 
 class UserModelAdmin(admin.ModelAdmin):
-    list_display = ["_id", "name", "role", "email", "contact", "is_active"]
+    list_display = [
+        "_id",
+        "name",
+        "role",
+        "email",
+        "contact",
+        "is_active",
+        "last_login",
+    ]
 
 
-class SKUItemsModelAdmin(admin.ModelAdmin):
+class StockItemModelAdmin(admin.ModelAdmin):
     list_display = [
         "_id",
         "sku_name",
@@ -43,6 +51,6 @@ class ByPassModelAdmin(admin.ModelAdmin):
 
 
 admin.site.register(User, UserModelAdmin)
-admin.site.register(SKUItems, SKUItemsModelAdmin)
+admin.site.register(StockItem, StockItemModelAdmin)
 admin.site.register(Invoice, InvoiceModelAdmin)
 admin.site.register(ByPassModel, ByPassModelAdmin)

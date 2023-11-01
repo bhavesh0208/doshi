@@ -93,7 +93,7 @@ class Company(models.Model):
         return self.company_name
 
 
-class SKUItems(models.Model):
+class StockItem(models.Model):
     # DATABASE FIELDS
     _id = models.ObjectIdField()
     sku_name = models.CharField(max_length=100, unique=True, default="")
@@ -131,7 +131,7 @@ class Invoice(models.Model):
     invoice_sales_ledger = models.CharField(max_length=200, default="")
     invoice_date = models.DateField(auto_now_add=True)
     invoice_item = models.ForeignKey(
-        SKUItems, on_delete=models.DO_NOTHING, default=None, blank=True
+        StockItem, on_delete=models.DO_NOTHING, default=None, blank=True
     )
     invoice_item_qty = models.IntegerField(default=0)
     invoice_item_rate = models.CharField(max_length=200, default="")
@@ -166,10 +166,10 @@ class ByPassModel(models.Model):
         Invoice, on_delete=models.DO_NOTHING, default=None, blank=True
     )
     bypass_sku_name = models.ForeignKey(
-        SKUItems, on_delete=models.DO_NOTHING, default=None, blank=True
+        StockItem, on_delete=models.DO_NOTHING, default=None, blank=True
     )
     bypass_against_sku_name = models.ForeignKey(
-        SKUItems,
+        StockItem,
         on_delete=models.CASCADE,
         default=None,
         blank=True,
@@ -271,7 +271,9 @@ class OTP(models.Model):
             raise Exception(f"User with given email {self.email} doesn't exist")
 
     def verify_otp(self, otp: str):
-        totp = OtpVerification(key=self.otp_secret)
+        totp = OtpVerification(
+            key=self.otp_secret, token_validity_period=settings.OTP_EMAIL_TOKEN_VALIDITY
+        )
         return totp.verify_otp(otp)
 
     @staticmethod
