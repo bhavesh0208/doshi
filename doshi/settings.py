@@ -129,7 +129,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
 # SMTP Configuration
-DEFAULT_FROM_EMAIL = myenv("DEFAULT_FROM_EMAIL") 
+DEFAULT_FROM_EMAIL = myenv("DEFAULT_FROM_EMAIL")
 EMAIL_BACKEND = myenv("EMAIL_BACKEND")
 EMAIL_HOST = myenv("EMAIL_HOST")
 EMAIL_PORT = myenv("EMAIL_PORT")
@@ -142,3 +142,7 @@ OTP_EMAIL_TOKEN_VALIDITY = 300
 OTP_EMAIL_BODY_TEMPLATE_PATH = os.path.join(
     BASE_DIR, "templates", "otp", "forgot_password_otp.html"
 )
+
+REDIRECT_FIELD_NAME = "next"
+LOGIN_URL = "login"
+LOGOUT_URL = "logout"

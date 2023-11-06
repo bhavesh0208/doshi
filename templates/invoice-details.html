@@ -58,9 +58,17 @@
                
                 <h6 class="m-0 font-weight-bold text-primary ">
                     <ul class="list-group list-group-horizontal m-2">
-                        <li class="list-group-item">Invoice no : <span class="text-secondary">{{invoice_details.invoice_no}}<span></li>
-                        <li class="list-group-item">Party Name: <span class="text-secondary">{{ invoice_details.invoice_party_name }}</span></li>
-                        <li class="list-group-item">Total Amount: <span class="text-secondary">{{ invoice_details.invoice_total_amount }}</span></li>
+                        <li class="list-group-item">Invoice no : <span class="text-secondary">{{invoice.invoice_no}}<span></li>
+                        <li class="list-group-item">Party Name: <span class="text-secondary">{{ invoice.invoice_party_name }}</span></li>
+                        <li class="list-group-item">Total Amount: <span class="text-secondary">{{ invoice.total_amount }}</span></li>
+                        <li class="list-group-item">Total Qty: <span class="text-secondary">{{ invoice.total_qty }}</span></li>
+                        {% if invoice.status == "PENDING" %}
+                          <li class="list-group-item">Status: <span class="badge badge-danger">{{ invoice.status | lower }}</span></li>
+                        {% elif invoice.status == "EXTRA" %}
+                          <li class="list-group-item">Status: <span class="badge badge-warning">{{ invoice.status | lower }}</span></li>
+                        {% else %}
+                          <li class="list-group-item">Status: <span class="badge badge-success">{{ invoice.status | lower }}</span></li>
+                        {% endif %}
                       </ul>
                 </h6>
               </div>
@@ -80,42 +88,46 @@
                         <th>S.K.U. Item Rate</th>
                         <th>S.K.U. Item Amount</th>
                         <th>Barcode</th>
-                        {% comment %} <th>Barcode</th> {% endcomment %}
                         <th>Status</th>
                         <th>Action</th> 
                       </tr>
                     </thead>
 
                     <tbody id="stockDataTable">
-                      {% for stk, srno in invoice_sku_list %}
+                      {% for sku in invoice_sku_list %}
                       <tr>
                         <td>{{ forloop.counter }}</td>
-                        <td class="sku-name">{{ srno.sku_name }}</td>
+                        <td class="sku-name">{{ sku.stock_item.sku_name }}</td>
                         <td>
-                          <span class="total-scan" style="color:blue">{{ stk.invoice_item_total_scan }}</span>/{{ stk.invoice_item_qty }}
+                          <span class="total-scan" style="color:blue">{{ sku.item_total_scan }}</span>/{{ sku.item_qty }}
                         </td>
-                        <td>{{ stk.invoice_item_rate }}</td>
-                        <td>{{ stk.invoice_item_amount }}</td>
-                        {% comment %} <td>{{ srno.sku_serial_no }}</td> {% endcomment %}
-                        <td class="barcode">{{ srno.sku_serial_no }}</td>
-                        {% if stk.invoice_item_scanned_status == "COMPLETED" %}
+                        <td>{{ sku.item_rate }}</td>
+                        <td>{{ sku.item_amount }}</td>
+                        <td class="barcode">{{ sku.stock_item.sku_serial_no }}</td>
+                        {% if sku.item_scanned_status == "COMPLETED" %}
                         <td>
                           <h6>
-                            <span class="badge rounded-pill badge-success">completed</span>
+                            <span class="badge badge-success"
+                              >completed</span
+                            >
                           </h6>
                         </td>
-                        {% elif stk.invoice_item_scanned_status == "EXTRA" %}
+                        {% elif sku.item_scanned_status == "PENDING" %}
                         <td>
                           <h6>
-                            <span class="badge rounded-pill badge-warning">extra</span>
+                            <span class="badge badge-danger"
+                              >pending</span
+                            >
                           </h6>
                         </td>
                         {% else %}
-                          <td>
-                            <h6>
-                              <span class="badge rounded-pill badge-danger">pending</span>
-                            </h6>
-                          </td>
+                        <td>
+                          <h6>
+                            <span class="badge badge-warning"
+                              >extra</span
+                            >
+                          </h6>
+                        </td>
                         {% endif %}
                         <td><button class="btn btn-sm btn-warning btn-block update" data-toggle="modal" data-target="#iupdateModal">Edit</button></td>
                       </tr>
@@ -145,7 +157,7 @@
 
     
 
-    {% comment %} {% for stk, srno in invoice_sku_list %} {% endcomment %}
+    {% comment %} {% for sku, srno in invoice_sku_list %} {% endcomment %}
     <!-- Logout Modal-->
     <div class="modal fade" id="iupdateModal" tabindex="-1" role="dialog" aria-labelledby="iexampleModalLabel"
         aria-hidden="true">
@@ -159,7 +171,7 @@
                 </div>
                 <div class="modal-body">
                   
-                  <form method="POST" action="{% url 'update-scan-qty' invoice_details.invoice_no %}">
+                  <form method="POST" action="{% url 'update-scan-qty' invoice.invoice_no %}">
                     {% csrf_token %}
                     
                     <div class="form-group">
@@ -191,7 +203,8 @@
             </div>
         </div>
     </div>
-  {% comment %} {% endfor %} {% endcomment %}
+    <!-- End Logout Model -->
+    {% comment %} {% endfor %} {% endcomment %}
     
 
 

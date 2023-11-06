@@ -86,8 +86,8 @@
                           <th>Invoice No</th>
                           <th>S.K.U. Name</th>
                           <th>Bypass Against S.K.U.</th>
-                          <th>Date</th>
-                          <th>Time</th>
+                          <th>Qty</th>
+                          <th>DateTime</th>
                         </tr>
                       </thead>
   
@@ -95,12 +95,11 @@
                         {% for item in bypass_list %}
                         <tr>
                           <td>{{ forloop.counter }}</td>
-                          <td id="1">{{ item.bypass_invoice_no }}</td>
-                          <td>{{ item.bypass_sku_name.sku_name }}</td>
-                          <td>{{ item.bypass_against_sku_name.sku_name }}</td>
-                          <td>{{ item.bypass_date }}</td>
-                          <td>{{ item.bypass_time }}</td>
-                          
+                          <td id="1">{{ item.invoice.invoice_no }}</td>
+                          <td>{{ item.bypass_stock_item.sku_name }}</td>
+                          <td>{{ item.stock_item.sku_name }}</td>
+                          <td>{{item.bypass_qty}}</td>
+                          <td>{{ item.created_at }}</td>
                         </tr>
                         {% endfor %}
                       </tbody>

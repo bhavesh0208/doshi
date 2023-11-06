@@ -34,7 +34,7 @@ class EmailThread(Thread):
 
 ## Logic Incomplete @
 def zipBarcodes():
-    sku_file_paths = SKUItems.objects.all().values_list("sku_barcode_image", flat=True)
+    sku_file_paths = StockItem.objects.all().values_list("sku_barcode_image", flat=True)
     with ZipFile("./media/AllBarcodes.zip", "w") as archive:
         for image_path in sku_file_paths:
             if image_path == "backup/":
@@ -77,10 +77,10 @@ def sendEmailReport():
                     invoice_no = Invoice.objects.get(
                         id=each["bypass_invoice_no_id"]
                     ).invoice_no
-                    bypass_sku_name = SKUItems.objects.get(
+                    bypass_sku_name = StockItem.objects.get(
                         id=each["bypass_sku_name_id"]
                     ).sku_name
-                    bypass_against_sku_name = SKUItems.objects.get(
+                    bypass_against_sku_name = StockItem.objects.get(
                         id=each["bypass_against_sku_name_id"]
                     )
                     bypass_date = each["bypass_date"].strftime("%Y-%m-%d")
@@ -118,8 +118,8 @@ def mapBaseQty(filename="sku.csv"):
 
         for i in csvreader:
             sku_item = i["ITEM"]
-            is_sku = SKUItems.objects.filter(sku_name=sku_item)
+            is_sku = StockItem.objects.filter(sku_name=sku_item)
             if is_sku.exists():
-                fetch_sku = SKUItems.objects.get(sku_name=sku_item)
+                fetch_sku = StockItem.objects.get(sku_name=sku_item)
                 fetch_sku.sku_base_qty = 1 if i["PACKING"] == "" else i["PACKING"]
                 fetch_sku.save()

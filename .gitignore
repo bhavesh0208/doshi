@@ -7,3 +7,4 @@ media/
 sku.csv
 BypassData.csv
 .env
+app/static/

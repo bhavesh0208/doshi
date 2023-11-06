@@ -66,7 +66,7 @@
             <div class="card shadow mb-4">
               <div class="card-header py-3">
                 <h6 class="m-0 font-weight-bold text-primary">
-                  Invoice no : {{invoice_no}}
+                  Invoice no : {{invoice.invoice_no}}
                 </h6>
                 <input
                   type="hidden"
@@ -78,17 +78,19 @@
                 <div>
                   <form id="needs-validation" novalidate>
                     {% csrf_token %}
+
                     <input
                       class="form-control"
                       id="barcodeInput"
                       type="text"
                       placeholder="Please provide 13-digit Barcode Number"
                       name="barcodeInput"
-                      pattern="[0-9]{13}"
+                      pattern="\d{13}"
                       maxlength="13"
                       aria-describedby="validationServer03Feedback"
                       required
                       autofocus
+                      {% if invoice.status == "COMPLETED" %} disabled {% endif %}
                     />
                     <div
                       class="invalid-feedback"
@@ -112,12 +114,9 @@
                         <th>Sr.No.</th>
                         <th>S.K.U. Name</th>
                         <th>S.K.U. Total Quantity</th>
-                        {% comment %} <th>S.K.U. Item Rate</th>
-                        <th>S.K.U. Item Amount</th> {% endcomment %}
                         <th>S.K.U. Base Quantity</th>
                         <th>Barcode</th>
                         <th>Status</th>
-                        {% comment %} <th>Action</th> {% endcomment %}
                         {% if request.session.role == "DISPATCHER" %}
                           <th>Dispatch</th>
                         {% endif %}
@@ -125,29 +124,29 @@
                     </thead>
 
                     <tbody id="stockDataTable">
-                      {% for stk, srno in invoice_sku_list %}
-                      <tr id="{{ stk.invoice_item_id }}">
+                      {% for sku in invoice_sku_list %}
+                      <tr id="{{ sku.invoice_item_id }}">
                         <td>{{ forloop.counter }}</td>
-                        <td>{{ srno.sku_name }}</td>
+                        <td>{{ sku.stock_item.sku_name }}</td>
                         <td>
-                          <span id="tscan" class="{{stk.invoice_item_id}}" style="color:blue">{{ stk.invoice_item_total_scan }}</span>/{{ stk.invoice_item_qty }}
+                          <span id="tscan" class="{{sku.invoice_item_id}}" style="color:blue">{{ sku.item_total_scan }}</span>/{{ sku.item_qty }}
                         </td>
-                        {% comment %} <td>{{ stk.invoice_item_rate }}</td>
-                        <td>{{ stk.invoice_item_amount }}</td> {% endcomment %}
-                        <td>{{srno.sku_base_qty}}</td>
-                        <td id="">{{ srno.sku_serial_no }}</td>
-                        {% if stk.invoice_item_scanned_status == "COMPLETED" %}
+                        {% comment %} <td>{{ sku.invoice_item_rate }}</td>
+                        <td>{{ sku.invoice_item_amount }}</td> {% endcomment %}
+                        <td>{{sku.stock_item.sku_base_qty}}</td>
+                        <td id="">{{ sku.stock_item.sku_serial_no }}</td>
+                        {% if sku.item_scanned_status == "COMPLETED" %}
                         <td>
                           <h6>
-                            <span class="badge rounded-pill badge-success"
+                            <span class="badge badge-success"
                               >completed</span
                             >
                           </h6>
                         </td>
-                        {% elif stk.invoice_item_scanned_status == "PENDING" %}
+                        {% elif sku.item_scanned_status == "PENDING" %}
                         <td>
                           <h6>
-                            <span class="badge rounded-pill badge-danger"
+                            <span class="badge badge-danger"
                               >pending</span
                             >
                           </h6>
@@ -155,7 +154,7 @@
                         {% else %}
                         <td>
                           <h6>
-                            <span class="badge rounded-pill badge-warning"
+                            <span class="badge badge-warning"
                               >extra</span
                             >
                           </h6>
@@ -163,7 +162,7 @@
                         {% endif %}
                         {% comment %} <td><button class="btn btn-sm btn-warning btn-block" data-toggle="modal" data-target="#iupdateModal">Edit</button></td> {% endcomment %}
                         {% if request.session.role == "DISPATCHER" %}
-                          {% if stk.invoice_item_scanned_status == "PENDING" %}
+                          {% if sku.item_scanned_status == "PENDING" %}
                             <td>
                               <button
                                 class="btn btn-sm btn-success btn-block dispatch-stock" data-sku-barcode-no="{{ srno.sku_serial_no }}"
@@ -219,7 +218,7 @@
 
           <!-- Modal body -->
           <div class="modal-body">
-            <form method="post" action="{% url "bypass-invoice" %}">
+            <form method="post" action="{% url "bypass-invoice-item" invoice.invoice_no %}">
               <div class="form-group row">
                 <div class="col-sm-10">
                   <h4>Do you want to continue ?</h4>
@@ -259,15 +258,15 @@
                 <label for="sku-against-name" class="col-sm-2 col-form-label"
                   >ByPass S.K.U.</label
                 >
-                <input type="hidden"   class="form-control" value={{pending_sku_names}} id="pending_sku_list" />
+                <input type="hidden" class="form-control" value={{pending_sku_names}} id="pending_sku_list" />
                 <div class="col-sm-10">
                   <select
                     class="form-control form-control-sm"
                     id="sku-against-name"
                   >
-                    {% for sku in pending_sku_names %}
-                    <option value="{{sku.sku_name}}">
-                      {{ sku.sku_name }}
+                    {% for sku in invoice_sku_list_pending %}
+                    <option value="{{sku.stock_item.sku_name}}">
+                      {{ sku.stock_item.sku_name }}
                     </option>
                     {% endfor %}
                   </select>
@@ -334,21 +333,8 @@
       });
     </script>
 
-      {% comment %}     
-        <script>
-          $('.edit').click(function(){
-            var invoice_item_id = $(this).attr('data-invoice-item-id');
-            $('#scan-' + invoice_item_id).attr("contenteditable", "true");
-            var invoice_item_total_scan = $("#scan-" + invoice_item_id).html();
-            console.log(invoice_item_total_scan, invoice_item_id);
-            $('#scan-' + invoice_item_id).attr("contenteditable", "false");
-          })
-        </script>
-     {% endcomment %}
-
     <script>
       $(document).ready(function (val) {
-        // console.log("hello");
         //$("#barcodeInput").focus();
         $("#barcodeInput").on("input", function (e) {
           //Fetch form to apply custom Bootstrap validation
@@ -368,17 +354,17 @@
             e.preventDefault();
             e.stopPropagation();
             // TODO: Remove all console.log
-            console.log("Not going anywhere....")
+            // console.log("Not going anywhere....")
           }
           else
           {
-            console.log("going to server....");
-
+            // console.log("going to server....");
+            
             $.ajax({
               type: "POST",
-              url: "{% url 'verify-invoice' %}",
+              url: window.location.href + "scan/",
               data: {
-                "invoice": invoice_no,
+                //"invoice": invoice.invoice_no,
                 "barcode": barcode_no,
                 // TODO: Remove check sku logic
                 "check-sku": check_sku,
@@ -387,25 +373,29 @@
               success: function (val) {
                 console.log(val);
                 if (val["status"] === "success") {
-                  location.reload();
-                  //console.log(val);
-                  
+                  location.reload();                  
                   // delete the row with barcode id
                   // append row with new data
                   // clear searchbar field
                   
-                } else if (val["status"] === "warning") {
+                } else if (val["status"] === "warning" &&  val["codename"] === "bypass_sku_item" ) {
                   v = $("#pending_sku_list").val();
                   $("#OpenModal").click();
-                  $("#sku-name").attr("value", val["sku-name"]);
+                  $("#sku-name").attr("value", val["data"]["sku-name"]);
                   $("#barcode").attr("value", barcode_no);
                   //$("#sku-against-name").attr("value", check_sku);
+                }
+                else if (val["status"] === "warning" &&  val["codename"] === "invoice_scanning_completed" ) {
+                  const error_message = val["msg"];
+
+                  var alert_element = `<div class=" m-3 alert alert-warning alert-dismissible fade show" id="error-alert" role="alert"> ${error_message}<button type="button" class="close" data-dismiss="alert" aria-label="Close"> <span aria-hidden="true">&times;</span></button></div>`;
+                  $(".container-fluid").before(alert_element);
                 }
                 else
                 {
                   const error_message = val["msg"];
                   //alert(val["msg"])
-                  var alert_element = `<div class=" m-3 alert alert-danger alert-dismissible fade show" id="error-alert" role="alert"> <strong>${error_message}</strong><button type="button" class="close" data-dismiss="alert" aria-label="Close"> <span aria-hidden="true">&times;</span></button></div>`;
+                  var alert_element = `<div class=" m-3 alert alert-danger alert-dismissible fade show" id="error-alert" role="alert"> ${error_message}<button type="button" class="close" data-dismiss="alert" aria-label="Close"> <span aria-hidden="true">&times;</span></button></div>`;
                   $(".container-fluid").before(alert_element);
 
                 }
@@ -421,13 +411,13 @@
     <script>
       $("#byPassDataBtn").on("click", function () {
         var barcode_no = $("#barcode").val();
-        var invoice_no = $("#invoice-no").val();
+        var invoice_no = {{invoice.invoice_no}};
         var sku_name = $("#sku-name").val();
         var sku_against_name = $("#sku-against-name").val();
-
+        console.log("Invoice ",invoice_no);
         $.ajax({
           type: "POST",
-          url: "{% url 'bypass-invoice' %}",
+          url: `/invoice/verify/${invoice_no}/bypass/`,
           data: {
             barcode: barcode_no,
             invoice: invoice_no,
@@ -436,15 +426,17 @@
             csrfmiddlewaretoken: $("input[name=csrfmiddlewaretoken]").val(),
           },
           success: function (val) {
-            console.log(val);
+            const error_message = val["msg"];
 
-            if (val["status"] === "success") {
+            if (val["codename"] === "bypass_success") {
               location.reload();
             } 
-            else {
-              const error_message = val["msg"];
-              //alert(val["msg"])
-              var alert_element = `<div class=" m-3 alert alert-danger alert-dismissible fade show" id="error-alert" role="alert"> <strong>${error_message}</strong><button type="button" class="close" data-dismiss="alert" aria-label="Close"> <span aria-hidden="true">&times;</span></button></div>`;
+            else if (val["codename"] === "sku_scan_complete") {
+              var alert_element = `<div class=" m-3 alert alert-warning alert-dismissible fade show" id="error-alert" role="alert"> ${error_message}<button type="button" class="close" data-dismiss="alert" aria-label="Close"> <span aria-hidden="true">&times;</span></button></div>`;
+              $(".container-fluid").before(alert_element);
+            }
+            else{
+              var alert_element = `<div class=" m-3 alert alert-danger alert-dismissible fade show" id="error-alert" role="alert"> ${error_message}<button type="button" class="close" data-dismiss="alert" aria-label="Close"> <span aria-hidden="true">&times;</span></button></div>`;
               $(".container-fluid").before(alert_element);
             }
           },
@@ -473,9 +465,8 @@
           console.log(val);
           if (val["status"] === "success")
           {
-            // console.log("helo");
             const success_message = val['msg'];
-            var alert_element = `<div class=" m-3 alert alert-success alert-dismissible fade show" id="error-alert" role="alert"> <strong>${success_message}</strong><button type="button" class="close" data-dismiss="alert" aria-label="Close"> <span aria-hidden="true">&times;</span></button></div>`;
+            var alert_element = `<div class=" m-3 alert alert-success alert-dismissible fade show" id="error-alert" role="alert"> ${success_message}<button type="button" class="close" data-dismiss="alert" aria-label="Close"> <span aria-hidden="true">&times;</span></button></div>`;
               $(".container-fluid").before(alert_element);
 
             location.reload();
@@ -485,9 +476,8 @@
             {
               $(this).attr('enable', true);
               const error_message = val['msg'];
-              var alert_element = `<div class=" m-3 alert alert-danger alert-dismissible fade show" id="error-alert" role="alert"> <strong>${error_message}</strong><button type="button" class="close" data-dismiss="alert" aria-label="Close"> <span aria-hidden="true">&times;</span></button></div>`;
+              var alert_element = `<div class=" m-3 alert alert-danger alert-dismissible fade show" id="error-alert" role="alert"> ${error_message}<button type="button" class="close" data-dismiss="alert" aria-label="Close"> <span aria-hidden="true">&times;</span></button></div>`;
                 $(".container-fluid").before(alert_element);
-
             }
       }
         })

@@ -36,6 +36,17 @@
       href="{% static 'assets/vendor/datatables/dataTables.bootstrap4.min.css' %}"
       rel="stylesheet"
     />
+
+    <style>
+      table.table td a {
+        font-weight: bold;
+        color: #566787;
+        display: inline-block;
+        text-decoration: none;
+        outline: none !important;
+        margin-right: 5 px;
+      }
+    </style>
   </head>
 
   <body id="page-top">
@@ -80,7 +91,7 @@
                       <tr>
                         <th>Sr.No.</th>
                         <th>Invoice No</th>
-                        <th>Company Name</th>
+                        {% comment %} <th>Company Name</th> {% endcomment %}
                         <th>Ledger Name</th>
                         <th>Date</th>
                         <th>Total Amount</th>
@@ -93,42 +104,55 @@
                     </thead>
 
                     <tbody>
-                      {% for invoice, status in invoices %}
+                      {% for invoice in invoices %}
                       <tr id="invoice-{{invoice.invoice_no}}">
                         <td>{{ forloop.counter }}</td>
                         <td>{{ invoice.invoice_no }}</td>
                       
-                        <td>{{ invoice.invoice_company | get_company_name }}</td>
+                        {% comment %} <td>{{ invoice.invoice_company | get_company_name }}</td> {% endcomment %}
                         <td>{{ invoice.invoice_party_name }}</td>
                         <td>{{ invoice.invoice_date }}</td>
-                        <td>{{ invoice.invoice_total_amount }}</td>
-                        {% if status == "COMPLETED" %}
+                        <td>{{ invoice.total_amount }}</td>
+                        {% if invoice.status == "COMPLETED" %}
                         <td>
                           <h6>
-                            <span class="badge rounded-pill badge-success">Completed</span>
+                            <span class="badge badge-success"> completed </span>
                           </h6>
                         </td>
-                        {% elif status == "PENDING" %}
+                        {% elif invoice.status == "EXTRA" %}
                         <td>
                           <h6>
-                            <span class="badge rounded-pill badge-danger">Pending</span>
+                            <span class="badge badge-warning"> extra </span>
                           </h6>
                         </td>
                         {% else %}
                         <td>
                           <h6>
-                            <span class="badge rounded-pill badge-warning">Extra</span>
+                            <span class="badge badge-danger"> pending </span>
                           </h6>
                         </td>
                         {% endif %}
-                        
                         <td>
-                          <a
-                            href="invoice-verify/{{ invoice.invoice_no }}"
-                            class="btn btn-sm btn-outline-info btn-block"
-                            role="button"
-                            >View</a
-                          >
+                          <a href="{% url "invoice-details" invoice.invoice_no %}" class="view" title="View" data-toggle="tooltip">
+                            <span style="font-size: 1.25em; color: DodgerBlue;">
+                              <i class="fas fa-eye">&#xE147;</i>
+                            </span>
+                          </a>
+                          <a href="{% url "invoice-verify" invoice.invoice_no %}" class="edit" title="Edit" data-toggle="tooltip">
+                            <span style="font-size: 1.25em; color: Orange;">
+                              <i class="fas fa-pen">&#xE15C;</i>
+                            </span>
+                          </a>
+                          {% comment %} <a href="#" class="delete" title="Delete" data-toggle="tooltip">
+                            <span style="font-size: 1.25em; color: Tomato;">
+                              <i class="fas fa-trash">&#xE15C;</i>
+                            </span>
+                          </a> {% endcomment %}
+                          <a href={% url "dispatch-invoice" invoice.invoice_no %} class="override" title="Override" data-toggle="tooltip">
+                            <span style="font-size: 1.25em; color: MediumSeaGreen;">
+                              <i class="fa fa-check">&#xE147;</i>
+                            </span>
+                          </a>
                           
                         </td>
                         {% if request.session.role == "ADMIN" or request.session.role == "EMPLOYEE" %}
@@ -220,44 +244,6 @@
 
     <!-- Page level custom scripts -->
     <script src="{% static 'assets/js/demo/datatables-demo.js' %}"></script>
-
-    <script>
-
-      $(".dispatch").click(function(){
-        $(this).attr('disabled',true);
-        var invoice_no = $(this).attr('data-invoice');
-        $.ajax({
-        type:"GET",
-        url: "{% url 'dispatch-invoice' %}",
-        data:{
-          "invoice_no": invoice_no
-        },
-        success: function(val){
-            console.log(val);
-            if (val["status"] === "success")
-            {
-              // console.log("helo");
-              const success_message = val['msg'];
-              var alert_element = `<div class=" m-3 alert alert-success alert-dismissible fade show" id="error-alert" role="alert"> <strong>${success_message}</strong><button type="button" class="close" data-dismiss="alert" aria-label="Close"> <span aria-hidden="true">&times;</span></button></div>`;
-                $(".container-fluid").before(alert_element);
-
-              // $('#invoice-'+invoice_no).remove();
-              location.reload();
-            }
-            else
-              {
-                $(this).attr('enable', true);
-                const error_message = val['msg'];
-                var alert_element = `<div class=" m-3 alert alert-danger alert-dismissible fade show" id="error-alert" role="alert"> <strong>${error_message}</strong><button type="button" class="close" data-dismiss="alert" aria-label="Close"> <span aria-hidden="true">&times;</span></button></div>`;
-                  $(".container-fluid").before(alert_element);
-
-              }
-        }
-
-      })
-      
-      })
-    </script>
 
     <script>
       $(document).ready(function () {
