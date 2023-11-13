@@ -1,60 +1,18 @@
+{% extends 'base.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, shrink-to-fit=no"
-    />
-    <meta name="description" content="" />
-    <meta name="author" content="" />
+{% block title %}Stock Keeping Units{% endblock title %}
+{% block css %}
+<link href="{% static 'assets/vendor/datatables/dataTables.bootstrap4.min.css' %}" rel="stylesheet"/>
+{% endblock css %}
 
-    <title>Doshi Brothers | S.K.U. </title>
+{% block content %}
+  <!-- Main container fluid -->
+  <div class="container-fluid">
 
-    <!-- Custom fonts for this template -->
-    <link
-      href="{% static 'assets/vendor/fontawesome-free/css/all.min.css' %}"
-      rel="stylesheet"
-      type="text/css"
-    />
-    <link
-      href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
-      rel="stylesheet"
-    />
-
-    <!-- Custom styles for this template -->
-    <link
-      href="{% static 'assets/css/sb-admin-2.min.css' %}"
-      rel="stylesheet"
-    />
-
-    <!-- Custom styles for this page -->
-    <link
-      href="{% static 'assets/vendor/datatables/dataTables.bootstrap4.min.css' %}"
-      rel="stylesheet"
-    />
-  </head>
-
-  <body id="page-top">
-    <!-- Page Wrapper -->
-    <div id="wrapper">
-      {% include 'sidebar.html' %}
-
-      <!-- Content Wrapper -->
-      <div id="content-wrapper" class="d-flex flex-column">
-        <!-- Main Content -->
-        <div id="content">
-          {% include 'topbar.html' with  heading="" %}
-
-          <!-- Begin Page Content -->
-          <div class="container-fluid">
-
-            <!-- DataTales Example -->
-            <div class="card shadow mb-4">
-              <div class="card-header d-sm-flex align-items-center justify-content-between mb-4">
-                <h6 class="mb-0 font-weight-bold text-primary">S.K.U. List</h6>
+       <!-- DataTales Example -->
+       <div class="card shadow mb-4">
+        <div class="card-header d-sm-flex align-items-center justify-content-between mb-4">
+            <h6 class="mb-0 font-weight-bold text-primary">S.K.U. List</h6>
 
                 
                 <a
@@ -64,279 +22,152 @@
                 >
                  
               
-          </div>
-              
-              <div class="card-body">
-                <div class="table-responsive">
-                  <!-- Topbar Search -->
-                <form method="GET"
-                 class="d-none d-sm-inline-block form-inline ml-auto ml-md-3 my-2 my-md-0 mw-100">
-                 <div class="input-group">
-                     <input type="text" class="form-control bg-light border-0 small" placeholder="Search for..."
-                         aria-label="Search" aria-describedby="basic-addon2" name="query" value="{{ request.GET.query }}">
-                     <div class="input-group-append">
-                         <button class="btn btn-primary" type="submit">
-                             <i class="fas fa-search fa-sm"></i>
-                         </button>
-                     </div>
-                 </div>
-             </form>
-                  <table
-                    class="table table-bordered"
-                    id="stockDataTable"
-                    width="100%"
-                    cellspacing="0"
-                  >
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="stockDataTable" width="100%" cellspacing="0">
                     <thead class="thead-dark">
-                      <tr>
-                        
-                        <th>Sr.No.</th>
-                        <th>S.K.U. Name</th>
-                        {% if request.session.role == "ADMIN" or request.session.role == "EMPLOYEE" %}
-                        <th>Quantity</th>
-                        <th>Rate</th>
-                        <th>Amount</th>
-                        <th>Base Qty</th>
-                        {% endif %}
-                        <th>Barcode No</th>
-                        {% comment %} <th>Download</th> {% endcomment %}
-                        {% if request.session.role == "ADMIN" %}
-                        <th>Action</th>
-                        {% endif %}
-                      </tr>
+                        <tr>
+                          <th>Sr.No.</th>
+                          <th>S.K.U. Name</th>
+                          {% if request.user.role == "ADMIN" or request.user.role == "EMPLOYEE" %}
+                            <th>Quantity</th>
+                            <th>Rate</th>
+                            <th>Amount</th>
+                            <th>Base Qty</th>
+                          {% endif %}
+                          <th>Barcode No</th>
+                          {% if request.session.role == "ADMIN" %}
+                            <th>Action</th>
+                          {% endif %}
+                        </tr>
                     </thead>
-
+                    
                     <tbody>
                       {% for stk in sku_obj %}
-                      <tr>
-                        <td>{{ forloop.counter }}</td>
-                        <td>{{ stk.sku_name }}</td>
-                        {% if request.session.role == "ADMIN" or request.session.role == "EMPLOYEE" %}
-                        <td>{{ stk.sku_qty }}</td>
-                        <td>{{ stk.sku_rate }}</td>
-                        <td>{{ stk.sku_amount }}</td>
-                        
-                        <td>{{ stk.sku_base_qty }}</td>
-                        {% endif %}
-                        <td>{{ stk.sku_serial_no }}</td>
-                        
-                        
-
-                        {% if request.session.role == "ADMIN" %}
-                        <td>
-                          <button class="btn btn-sm btn-outline-warning update" data-toggle="modal" data-target="#updateDataModal" data-id="{{sku.id}}">
-                            Update
-                          </button>
-                        </td>
-                        {% endif %}
-
-                      </tr>
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ stk.sku_name }}</td>
+                            {% if request.user.role == "ADMIN" or request.user.role == "EMPLOYEE" %}
+                              <td>{{ stk.sku_qty }}</td>
+                              <td>{{ stk.sku_rate }}</td>
+                              <td>{{ stk.sku_amount }}</td>
+                              <td>{{ stk.sku_base_qty }}</td>
+                            {% endif %}
+                            <td>{{ stk.sku_serial_no }}</td>
+                            {% if request.session.role == "ADMIN" %}
+                            <td>
+                              <button class="btn btn-warning btn-circle btn-sm update" data-toggle="modal" data-target="#updateDataModal" data-id="{{sku.id}}"><i class="fas fa-edit"></i>
+                              </button>
+                            </td>
+                            {% endif %}
+                        </tr>
                       {% endfor %}
                     </tbody>
-                  </table>
-                  
-                  
-<div class="my-3">
-  <ul class="pagination justify-content-end">
-    {% for page_number in sku_obj.adjusted_elided_pages %}
-      {% if page_number == sku_obj.paginator.ELLIPSIS %}
-        <li class="page-item"><a class="page-link">...</a></li>
-      {% else %}
-      <li class="page-item"><a
-            href="{% url 'sku-items' page_number %}"
-            class="page-link {% if page_number == sku_obj.number %}current{% endif %}"
-        >
-            {{page_number}}
-        </a></li>
-    {% endif %}
-    {% endfor %}
-  </ul>
-</div>
-                                        
-                </div>
+                </table>
+            </div>
+        </div>
+    </div>
+  </div>
+  <!--End container fluid-->
+{% endblock content %}
+
+{% block modals %}
+  <!--Modal-->
+  <div class="modal fade" id="updateDataModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="exampleModalLabel">Update S.K.U.</h5>
+          <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">×</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <form method="post" action="{% url 'update-sku' %}">
+
+            {% csrf_token %}
+
+            <div class="form-group row">
+              <label for="sku-name" class="col-sm-2 col-form-label">S.K.U.
+              </label>
+              <div class="col-sm-10">
+                <input type="text" class="form-control form-control-sm" id="exampleInputSKU" name="update-sku-name"
+                  minlength=2 disabled />
+              </div>
+
+            </div>
+
+            <div class="form-group row">
+              <label for="sku-base-qty" class="col-sm-2 col-form-label">Base Qty
+              </label>
+              <div class="col-sm-10">
+                <input type="number" class="form-control form-control-sm" id="exampleInputBaseQty" name="update-sku-qty"
+                  value="" min=1 />
               </div>
             </div>
-          </div>
-          <!-- /.container-fluid -->
+            <div class="form-group row">
+              {% comment %} <label for="sku-base-qty" class="col-sm-2 col-form-label">Base Qty
+              </label> {% endcomment %}
+              <div class="col-sm-10">
+                <input type="text" class="form-control form-control-sm" id="exampleInputBarcode" name="update-sku-srno"
+                  value="" {% comment %} hidden {% endcomment %} maxlength=13 hidden />
+              </div>
+            </div>
+            <hr />
+            <div class="form-group row ">
+              <div class="col-sm-10 ">
+                <button class="btn btn-sm btn-secondary" type="button" data-dismiss="modal">
+                  Cancel
+                </button>
+                <button class="btn btn-sm btn-primary" type="submit">Update</button>
+              </div>
+            </div>
+
         </div>
-        <!-- End of Main Content -->
-
-        <!-- Footer -->
-        {% include 'footer.html' %}
-
-      </div>
-      <!-- End of Content Wrapper -->
-    </div>
-    <!-- End of Page Wrapper -->
-
-    <!-- Scroll to Top Button-->
-    <a class="scroll-to-top rounded" href="#page-top">
-      <i class="fas fa-angle-up"></i>
-    </a>
-
-    
-    <div
-      class="modal fade"
-      id="updateDataModal"
-      tabindex="-1"
-      role="dialog"
-      aria-labelledby="exampleModalLabel"
-      aria-hidden="true"
-    >
-      <div class="modal-dialog" role="document">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="exampleModalLabel">Update S.K.U.</h5>
-            <button
-              class="close"
-              type="button"
-              data-dismiss="modal"
-              aria-label="Close"
-            >
-              <span aria-hidden="true">×</span>
-            </button>
-          </div>
-          <div class="modal-body">
-            <form method="post" action="{% url 'update-sku' %}">
-
-              {% csrf_token %}
-              {% comment %} <div class="form-group row">
-                <div class="col-sm-10">
-                  <input
-                    type="text"
-                    class="form-control form-control-sm"
-                    name="update-sku-id"
-                    value="{{i.id}}"
-                    hidden
-                  />
-                </div>
-              
-              </div> {% endcomment %}
-              
-              <div class="form-group row">
-                <label for="sku-name" class="col-sm-2 col-form-label"
-                  >S.K.U.
-                </label>
-                <div class="col-sm-10">
-                  <input
-                    type="text"
-                    class="form-control form-control-sm"
-                    id ="exampleInputSKU"
-                    name="update-sku-name"
-                    minlength=2
-                  />
-                </div>
-              
-              </div>
-
-              <div class="form-group row">
-                <label for="sku-base-qty" class="col-sm-2 col-form-label"
-                  >Base Qty
-                </label>
-                <div class="col-sm-10">
-                  <input
-                    type="number"
-                    class="form-control form-control-sm"
-                    id = "exampleInputBaseQty"
-                    name="update-sku-qty"
-                    value=""
-                    min=1
-                  />
-                </div>
-              </div>
-              <div class="form-group row">
-                {% comment %} <label for="sku-base-qty" class="col-sm-2 col-form-label"
-                  >Base Qty
-                </label> {% endcomment %}
-                <div class="col-sm-10">
-                  <input
-                    type="text"
-                    class="form-control form-control-sm"
-                    id = "exampleInputBarcode"
-                    name="update-sku-srno"
-                    value=""
-                    {% comment %} hidden {% endcomment %}
-                    maxlength=13
-                    hidden
-                  />
-                </div>
-              </div> 
-              <hr/>
-              <div class="form-group row ">
-                <div class="col-sm-10 ">
-                  <button
-                      class="btn btn-sm btn-secondary"
-                      type="button"
-                      data-dismiss="modal"
-                    >
-                    Cancel
-                  </button>
-                  <button class="btn btn-sm btn-primary" type="submit">Update</button>
-                </div>
-              </div>
-            
-          </div>
         </form>
-          
-        </div>
+
       </div>
     </div>
+  </div>
+  <!--End-->
+{% endblock modals %}
+
+{% block js %}
+<!-- Page level plugins -->
+<script src="{% static 'assets/vendor/datatables/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'assets/vendor/datatables/dataTables.bootstrap4.min.js' %}"></script>
+
+<!-- Page level custom scripts -->
+<script src="{% static 'assets/js/demo/datatables-demo.js' %}"></script>
 
 
-    <!-- Bootstrap core JavaScript-->
-    <script src="{% static 'assets/vendor/bootstrap/js/bootstrap.bundle.min.js ' %}"></script>
-    <script src="{% static 'assets/vendor/jquery/jquery.min.js' %}"></script>
+<script>
+  $(".update").click(function () {
+    var $row = $(this).closest("tr");
+    //console.log($row);
+    $tds2 = $row.find("td:nth-child(2)");
+    $tds6 = $row.find("td:nth-child(6)");
+    $tds7 = $row.find("td:nth-child(7)");
+    console.log($tds2.text(), $tds6.text(), $tds7.text());
 
-    <!-- Core plugin JavaScript-->
-    <script src="{% static 'assets/vendor/jquery-easing/jquery.easing.min.js' %}"></script>
+    $('#exampleInputSKU').val($tds2.text());
+    $('#exampleInputBaseQty').val($tds6.text());
+    $('#exampleInputBarcode').val($tds7.text());
 
-    <!-- Custom scripts for all pages-->
-    <script src="{% static 'assets/js/sb-admin-2.min.js' %}"></script>
+  });
 
-    <!-- Page level plugins -->
-    <script src="{% static 'assets/vendor/datatables/jquery.dataTables.min.js' %}"></script>
-    <script src="{% static 'assets/vendor/datatables/dataTables.bootstrap4.min.js' %}"></script>
+  $(document).ready(function () {
+    $("#stockDataTable").DataTable({
+      "lengthMenu": [[10, 25, 50], [10, 25, 50]],
+      "responsive": true,
+      "search": {
+        return: true
+    }
+      //"columnDefs": [{ "searchable": true }, "targets": [ 0 ]] 
+    });
 
-    <!-- Page level custom scripts -->
-    <script src="{% static 'assets/js/demo/datatables-demo.js' %}"></script>
-
-    {% comment %} <script>
-      var stockData = document.getElementById("stockDataTable");
-      for (var i = 1; i < stockData.rows.length; i++) {
-        stockQty = stockData.rows[i].cells.item(2).innerHTML;
-        stockRate = stockData.rows[i].cells.item(3).innerHTML;
-        stockData.rows[i].cells.item(4).innerHTML = (
-          stockQty * stockRate
-        ).toFixed(3);
-      }
-    </script> {% endcomment %}
-
-    <script>
-
-      $(".update").click(function(){
-        var $row = $(this).closest("tr");
-        //console.log($row);
-        $tds2 = $row.find("td:nth-child(2)");
-        $tds6 = $row.find("td:nth-child(6)");
-        $tds7 = $row.find("td:nth-child(7)");
-        console.log($tds2.text(), $tds6.text(), $tds7.text());
-
-        $('#exampleInputSKU').val($tds2.text());
-        $('#exampleInputBaseQty').val($tds6.text());
-        $('#exampleInputBarcode').val($tds7.text());
-      
-      });
-
-      $(document).ready(function () {
-        $("#stockDataTable").DataTable({
-          "bInfo": null,
-          "lengthMenu": [[25, 50, 100], [25, 50, 100]],
-          "paging":false,
-          "searching":false
-          //"columnDefs": [{ "searchable": true }, "targets": [ 0 ]] 
-        });
-        
-      }); 
-    </script>
-  </body>
-</html>
+  }); 
+</script>
+{% endblock js %}

@@ -1,0 +1,197 @@
+{% extends 'auth/base.html' %}
+{% load static %}
+{% block title %}Register{% endblock title %}
+{% block css %}
+{% endblock css %}
+
+{% block content %}
+<!-- Outer Row -->
+<div class="card o-hidden border-0 shadow-lg my-5">
+  <div class="card-body p-0">
+    <!-- Nested Row within Card Body -->
+    <div class="row">
+      <div class="col-lg-5 d-none d-lg-block bg-register" style="background : url(https://images.unsplash.com/photo-1532635042-a6f6ad4745f9?crop=entropy&cs=tinysrgb&fm=jpg&ixlib=rb-1.2.1&q=60&raw_url=true&ixid=MnwxMjA3fDB8MHxzZWFyY2h8MTV8fGxvZ2lzdGljfGVufDB8fDB8fA%3D%3D&auto=format&fit=crop&w=500);"></div>
+
+      <div class="col-lg-7">
+        <div class="p-5">
+          <div class="text-center">
+            <h1 class="h4 text-gray-900 mb-4">Create an Account!</h1>
+          </div>
+          <form
+            method="post"
+            action="{% url 'register' %}"
+            class="user needs-validation"
+            novalidate
+          >
+            {% csrf_token %} {% if messages %}
+            <div
+              class="alert alert-danger alert-dismissible fade show"
+              role="alert">
+              
+              {% for message in messages %}
+
+              <strong>{{ message }}</strong>
+              <button
+                type="button"
+                class="close"
+                data-dismiss="alert"
+                aria-label="Close"
+              >
+                <span aria-hidden="true">&times;</span>
+              </button>
+              {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="form-group row">
+              <div class="col-sm-6 mb-3 mb-sm-0">
+                <input
+                  type="text"
+                  class="form-control form-control-user"
+                  id="exampleInputName"
+                  name="registerName"
+                  pattern="[A-Za-z]{2,}"
+                  placeholder="Name"
+                  required
+                />
+                <div class="ml-3 valid-feedback">Looks good!</div>
+                <div class="ml-3 invalid-feedback">
+                  Please provide a valid name.
+                </div>
+              </div>
+              <div class="form-group col-sm-6 mb-3 mb-sm-0">
+                <input
+                  type="text"
+                  class="form-control form-control-user"
+                  id="exampleInputContact"
+                  name="registerContact"
+                  pattern="[0-9]{10}"
+                  placeholder="Contact Number"
+                  required
+                />
+                <div class="ml-3 valid-feedback">Looks good!</div>
+                <div class="ml-3 invalid-feedback">
+                  Please provide 10 digit mobile number
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <input
+                type="email"
+                class="form-control form-control-user"
+                id="exampleInputEmail"
+                name="registerEmail"
+                placeholder="Email Address"
+                required
+              />
+              <div class="ml-3 valid-feedback">Looks good!</div>
+              <div class="ml-3 invalid-feedback">
+                Please provide a valid email address.
+              </div>
+            </div>
+
+            <div class="form-group">
+              <div class="input-group">
+                <input
+                  type="password"
+                  class="form-control form-control-user"
+                  name="registerPassword"
+                  pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}"
+                  id="exampleInputPassword"
+                  placeholder="Password"
+                  required
+                />
+
+                <span class="input-group-append">
+                  <div
+                    id="togglePassword"
+                    style="
+                      border-bottom-right-radius: 25px;
+                      border-top-right-radius: 25px;
+                    "
+                    class="form-control form-control-user input-group-text bg-transparent"
+                  >
+                    <i
+                      class="fa fa-eye"
+                      id="togglePassword"
+                      aria-hidden="true"
+                    ></i>
+                  </div>
+                </span>
+                <div class="ml-3 valid-feedback">Looks good!</div>
+                <div class="ml-3 invalid-feedback">
+                  A minimum 8 characters password contains a combination
+                  of uppercase and lowercase letter and number are
+                  required.
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              class="btn btn-primary btn-user btn-block"
+            >
+              Register Account
+            </button>
+          </form>
+          <hr />
+
+          <div class="text-center">
+            <a class="small" href="{% url 'login' %}"
+              >Already have an account? Login!</a
+            >
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- End Outer Row -->
+{% endblock content %}
+
+{% block js %}
+<script>
+  const togglePassword = document.getElementById("togglePassword");
+  const password = document.getElementById("exampleInputPassword");
+
+  togglePassword.addEventListener("click", function (e) {
+    const type =
+      password.getAttribute("type") === "password" ? "text" : "password";
+    password.setAttribute("type", type);
+    togglePassword.getElementsByTagName("i").toggle("fa-eye-slash");
+  });
+</script>
+
+<script>
+  // Example starter JavaScript for disabling form submissions if there are invalid fields
+  (function () {
+    "use strict";
+    window.addEventListener(
+      "load",
+      function () {
+        // Fetch all the forms we want to apply custom Bootstrap validation styles to
+        var forms = document.getElementsByClassName("needs-validation");
+        // Loop over them and prevent submission
+        var validation = Array.prototype.filter.call(
+          forms,
+          function (form) {
+            form.addEventListener(
+              "submit",
+              function (event) {
+                if (form.checkValidity() === false) {
+                  event.preventDefault();
+                  event.stopPropagation();
+                }
+                form.classList.add("was-validated");
+              },
+              false
+            );
+          }
+        );
+      },
+      false
+    );
+  })();
+</script>
+{% endblock js %}

@@ -1,0 +1,133 @@
+{% extends 'auth/base.html' %}
+{% load static %}
+{% block title %}Login{% endblock title %}
+{% block css %}{% endblock css %}
+
+{% block content %}
+<!-- Outer Row -->
+<div class="row justify-content-center">
+
+    <div class="col-xl-10 col-lg-12 col-md-9">
+
+        <div class="card o-hidden border-0 shadow-lg my-5">
+            <div class="card-body p-0">
+                <!-- Nested Row within Card Body -->
+                <div class="row">
+                    <div class="col-lg-6 d-none d-lg-block bg-login"
+                        style="background: url(https://images.unsplash.com/photo-1587293852726-70cdb56c2866?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxzZWFyY2h8Mnx8bG9naXN0aWN8ZW58MHx8MHx8&auto=format&fit=crop&w=500&q=60);background-position: center;background-size: cover;">
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="p-5">
+                            <div class="text-center">
+                                <h1 class="h4 text-gray-900 mb-4">Welcome Back!</h1>
+                            </div>
+                            {% if messages %}
+                            {% for message in messages %}
+                            {% if message.tags == "success" %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert"
+                                id="otpAlert">
+
+                                <strong>{{ message }}</strong>
+                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            {% else %}
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert" id="otpAlert">
+
+                                <strong>{{ message }}</strong>
+                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            {% endif %}
+                            {% endfor %}
+                            {% endif %}
+
+                            <form method="post" action="{% url 'login' %}" class="user needs-validation" novalidate>
+                                {% csrf_token %}
+
+                                <div class="form-group">
+                                    <input type="email" class="form-control form-control-user" id="exampleInputEmail"
+                                        aria-describedby="emailHelp" name="loginEmail"
+                                        placeholder="Enter Email Address..." required>
+                                    <div class=" ml-3 valid-feedback"> Looks good!</div>
+                                    <div class=" ml-3 invalid-feedback">Please provide a valid email address.</div>
+                                </div>
+
+                                <div class="form-group">
+                                    <div class="input-group">
+                                        <input type="password" class="form-control form-control-user"
+                                            name="loginPassword" pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}"
+                                            id="exampleInputPassword" placeholder="Password" required>
+
+                                        <span class="input-group-append">
+                                            <div id="togglePassword"
+                                                style=" border-bottom-right-radius: 25px; border-top-right-radius: 25px;"
+                                                class="form-control form-control-user input-group-text bg-transparent">
+                                                <i class="fa fa-eye" id="togglePassword" aria-hidden="true"></i>
+                                            </div>
+                                        </span>
+                                        <div class=" ml-3 valid-feedback"> Looks good!</div>
+                                        <div class=" ml-3 invalid-feedback">Please provide a valid Password</div>
+
+                                    </div>
+
+                                </div>
+
+                                <button type="submit" class="btn btn-primary btn-user btn-block"> Login</button>
+
+                            </form>
+                            <hr>
+                            <div class="text-center">
+                                <a class="small" href="{% url 'forgot-password' %}">Forgot Password?</a>
+                            </div>
+                            <div class="text-center">
+                                <a class="small" href="{% url 'register' %}">Create an Account!</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+<!-- End Outer Row -->
+{% endblock content %}
+
+{% block js %}
+<script>
+    const togglePassword = document.getElementById('togglePassword');
+    const password = document.getElementById('exampleInputPassword');
+
+    togglePassword.addEventListener('click', function (e) {
+        const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+        password.setAttribute('type', type);
+        togglePassword.getElementsByTagName('i').toggle('fa-eye-slash');
+    })
+</script>
+
+
+<script>
+        // Example starter JavaScript for disabling form submissions if there are invalid fields
+        (function () {
+            'use strict';
+            window.addEventListener('load', function () {
+                // Fetch all the forms we want to apply custom Bootstrap validation styles to
+                var forms = document.getElementsByClassName('needs-validation');
+                // Loop over them and prevent submission
+                var validation = Array.prototype.filter.call(forms, function (form) {
+                    form.addEventListener('submit', function (event) {
+                        if (form.checkValidity() === false) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                        }
+                        form.classList.add('was-validated');
+                    }, false);
+                });
+            }, false);
+        })();
+</script>
+{% endblock js %}

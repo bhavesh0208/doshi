@@ -42,7 +42,7 @@ urlpatterns = [
         name="dispatch-sku",
     ),
     # Activity log urls
-    path("activity-logs/", get_activity_logs, name="activity-logs"),
+    path("activity/logs/", get_activity_logs, name="activity-logs"),
     # CSV generate urls
     path("generate-csv-bypass/", generate_csv, name="generate-csv-bypass"),
     path(
@@ -51,6 +51,5 @@ urlpatterns = [
         name="generate-csv-sku-items",
     ),
     # Company urls
-    path("company-list/", get_company_list, name="company-list"),
-    # path('api/sku-items', listing_sku_api, name="sku-items-api"),
+    path("company/list/", get_company_list, name="company-list"),
 ]

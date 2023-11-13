@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import *
+from app.models import User, StockItem, InvoiceTest, ByPassModel
 
 # Register your models here.
 

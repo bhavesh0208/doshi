@@ -1,488 +1,421 @@
+{% extends 'base.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, shrink-to-fit=no"
-    />
-    <meta name="description" content="" />
-    <meta name="author" content="" />
+{% block title %}Stock Keeping Units{% endblock title %}
+{% block css %}
+<link href="{% static 'assets/vendor/datatables/dataTables.bootstrap4.min.css' %}" rel="stylesheet"/>
+{% endblock css %}
 
-    <title>Doshi Brothers | Invoice</title>
+{% block content %}
+<!-- Begin Page Content -->
+<div class="container-fluid">
+  <!-- Page Heading -->
 
-    <!-- Custom fonts for this template -->
-    <link
-      href="{% static "assets/vendor/fontawesome-free/css/all.min.css" %}"
-      rel="stylesheet"
-      type="text/css"
-    />
-    <link
-      href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
-      rel="stylesheet"
-    />
+  <!--Toggle modal class-->
+  <p
+    id="OpenModal"
+    data-toggle="modal"
+    data-target="#warningModal"
+    hidden
+  >
+    Open Modal
+  </p>
 
-    <!-- Custom styles for this template -->
-    <link
-      href="{% static "assets/css/sb-admin-2.min.css" %}"
-      rel="stylesheet"
-    />
+  <!-- DataTales Example -->
+  <div class="card shadow mb-4">
+    <div class="card-header py-3">
+      <h6 class="m-0 font-weight-bold text-primary">
+        Invoice no : {{invoice.invoice_no}}
+      </h6>
+      <input
+        type="hidden"
+        name="invoice"
+        id="invoice-no"
+        value="{{invoice_no}}"
+      />
+      <br />
+      <div>
+        <form id="needs-validation" novalidate>
+          {% csrf_token %}
 
-    <!-- Custom styles for this page -->
-    <link
-      href="{% static "assets/vendor/datatables/dataTables.bootstrap4.min.css" %}"
-      rel="stylesheet"
-    />
-  </head>
-  <!--TODO: Remove JS and put it into seperate folder-->
-  <body id="page-top">
-    <!-- Page Wrapper -->
-    <div id="wrapper">
-      {% include "sidebar.html" %}
+          <input
+            class="form-control"
+            id="barcodeInput"
+            type="text"
+            placeholder="Please provide 13-digit Barcode Number"
+            name="barcodeInput"
+            pattern="\d{13}"
+            maxlength="13"
+            aria-describedby="validationServer03Feedback"
+            required
+            autofocus
+            {% if invoice.status == "COMPLETED" %} disabled {% endif %}
+          />
+          <div
+            class="invalid-feedback"
+            id="validationServer03Feedback"
+          >
+            Please enter valid 13 digit barcode number
+          </div>
+        </form>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table
+          class="table table-bordered table-hover table-hover-primary"
+          width="100%"
+          id="invoiceVerifyDataTable"
+          cellspacing="0"
+        >
+          <thead class="thead-dark">
+            <tr>
+              <th>Sr.No.</th>
+              <th>S.K.U. Name</th>
+              <th>S.K.U. Total Quantity</th>
+              <th>S.K.U. Base Quantity</th>
+              <th>Barcode</th>
+              <th>Status</th>
+              {% if request.session.role == "DISPATCHER" %}
+                <th>Dispatch</th>
+              {% endif %}
+            </tr>
+          </thead>
 
-      <!-- Content Wrapper -->
-      <div id="content-wrapper" class="d-flex flex-column">
-        <!-- Main Content -->
-        <div id="content">
-          {% include "topbar.html" with heading="" %}
-
-          <!-- Begin Page Content -->
-          <div class="container-fluid">
-            <!-- Page Heading -->
-
-            <!--Toggle modal class-->
-            <p
-              id="OpenModal"
-              data-toggle="modal"
-              data-target="#warningModal"
-              hidden
-            >
-              Open Modal
-            </p>
-
-            <!-- DataTales Example -->
-            <div class="card shadow mb-4">
-              <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">
-                  Invoice no : {{invoice.invoice_no}}
+          <tbody id="stockDataTable">
+            {% for sku in invoice_sku_list %}
+            <tr id="{{ sku.invoice_item_id }}">
+              <td>{{ forloop.counter }}</td>
+              <td>{{ sku.stock_item.sku_name }}</td>
+              <td>
+                <span id="tscan" class="{{sku.invoice_item_id}}" style="color:blue">{{ sku.item_total_scan }}</span>/{{ sku.item_qty }}
+              </td>
+              {% comment %} <td>{{ sku.invoice_item_rate }}</td>
+              <td>{{ sku.invoice_item_amount }}</td> {% endcomment %}
+              <td>{{sku.stock_item.sku_base_qty}}</td>
+              <td id="">{{ sku.stock_item.sku_serial_no }}</td>
+              {% if sku.item_scanned_status == "COMPLETED" %}
+              <td>
+                <h6>
+                  <span class="badge badge-success"
+                    >completed</span
+                  >
                 </h6>
-                <input
-                  type="hidden"
-                  name="invoice"
-                  id="invoice-no"
-                  value="{{invoice_no}}"
-                />
-                <br />
-                <div>
-                  <form id="needs-validation" novalidate>
-                    {% csrf_token %}
-
-                    <input
-                      class="form-control"
-                      id="barcodeInput"
-                      type="text"
-                      placeholder="Please provide 13-digit Barcode Number"
-                      name="barcodeInput"
-                      pattern="\d{13}"
-                      maxlength="13"
-                      aria-describedby="validationServer03Feedback"
-                      required
-                      autofocus
-                      {% if invoice.status == "COMPLETED" %} disabled {% endif %}
-                    />
-                    <div
-                      class="invalid-feedback"
-                      id="validationServer03Feedback"
-                    >
-                      Please enter valid 13 digit barcode number
-                    </div>
-                  </form>
-                </div>
-              </div>
-              <div class="card-body">
-                <div class="table-responsive">
-                  <table
-                    class="table table-bordered table-hover table-hover-primary"
-                    width="100%"
-                    id="invoiceVerifyDataTable"
-                    cellspacing="0"
+              </td>
+              {% elif sku.item_scanned_status == "PENDING" %}
+              <td>
+                <h6>
+                  <span class="badge badge-danger"
+                    >pending</span
                   >
-                    <thead class="thead-dark">
-                      <tr>
-                        <th>Sr.No.</th>
-                        <th>S.K.U. Name</th>
-                        <th>S.K.U. Total Quantity</th>
-                        <th>S.K.U. Base Quantity</th>
-                        <th>Barcode</th>
-                        <th>Status</th>
-                        {% if request.session.role == "DISPATCHER" %}
-                          <th>Dispatch</th>
-                        {% endif %}
-                      </tr>
-                    </thead>
-
-                    <tbody id="stockDataTable">
-                      {% for sku in invoice_sku_list %}
-                      <tr id="{{ sku.invoice_item_id }}">
-                        <td>{{ forloop.counter }}</td>
-                        <td>{{ sku.stock_item.sku_name }}</td>
-                        <td>
-                          <span id="tscan" class="{{sku.invoice_item_id}}" style="color:blue">{{ sku.item_total_scan }}</span>/{{ sku.item_qty }}
-                        </td>
-                        {% comment %} <td>{{ sku.invoice_item_rate }}</td>
-                        <td>{{ sku.invoice_item_amount }}</td> {% endcomment %}
-                        <td>{{sku.stock_item.sku_base_qty}}</td>
-                        <td id="">{{ sku.stock_item.sku_serial_no }}</td>
-                        {% if sku.item_scanned_status == "COMPLETED" %}
-                        <td>
-                          <h6>
-                            <span class="badge badge-success"
-                              >completed</span
-                            >
-                          </h6>
-                        </td>
-                        {% elif sku.item_scanned_status == "PENDING" %}
-                        <td>
-                          <h6>
-                            <span class="badge badge-danger"
-                              >pending</span
-                            >
-                          </h6>
-                        </td>
-                        {% else %}
-                        <td>
-                          <h6>
-                            <span class="badge badge-warning"
-                              >extra</span
-                            >
-                          </h6>
-                        </td>
-                        {% endif %}
-                        {% comment %} <td><button class="btn btn-sm btn-warning btn-block" data-toggle="modal" data-target="#iupdateModal">Edit</button></td> {% endcomment %}
-                        {% if request.session.role == "DISPATCHER" %}
-                          {% if sku.item_scanned_status == "PENDING" %}
-                            <td>
-                              <button
-                                class="btn btn-sm btn-success btn-block dispatch-stock" data-sku-barcode-no="{{ srno.sku_serial_no }}"
-                                data-sku-name = "{{ srno.sku_name}}" data-invoice-no ="{{invoice_no}}" 
-                                role="button"
-                                >Dispatch</a>
-                            </td>
-                          {% else %}
-                            <td>
-                              <button
-                                class="btn btn-sm btn-success btn-block disabled" data-sku-barcode-no="{{ srno.sku_serial_no }}"
-                                data-sku-name = "{{ srno.sku_name}}" data-invoice-no ="{{invoice_no}}" 
-                                role="button"
-                                >Dispatch</a>
-                            </td>
-                          {% endif %}
-                        {% endif %}
-                      </tr>
-                      {% endfor %}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          </div>
-          <!-- /.container-fluid -->
-        </div>
-        <!-- End of Main Content -->
-
-        <!-- Footer -->
-        {% include "footer.html" %}
+                </h6>
+              </td>
+              {% else %}
+              <td>
+                <h6>
+                  <span class="badge badge-warning"
+                    >extra</span
+                  >
+                </h6>
+              </td>
+              {% endif %}
+              {% comment %} <td><button class="btn btn-sm btn-warning btn-block" data-toggle="modal" data-target="#iupdateModal">Edit</button></td> {% endcomment %}
+              {% if request.session.role == "DISPATCHER" %}
+                {% if sku.item_scanned_status == "PENDING" %}
+                  <td>
+                    <button
+                      class="btn btn-sm btn-success btn-block dispatch-stock" data-sku-barcode-no="{{ srno.sku_serial_no }}"
+                      data-sku-name = "{{ srno.sku_name}}" data-invoice-no ="{{invoice_no}}" 
+                      role="button"
+                      >Dispatch</a>
+                  </td>
+                {% else %}
+                  <td>
+                    <button
+                      class="btn btn-sm btn-success btn-block disabled" data-sku-barcode-no="{{ srno.sku_serial_no }}"
+                      data-sku-name = "{{ srno.sku_name}}" data-invoice-no ="{{invoice_no}}" 
+                      role="button"
+                      >Dispatch</a>
+                  </td>
+                {% endif %}
+              {% endif %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
       </div>
-      <!-- End of Content Wrapper -->
     </div>
-    <!-- End of Page Wrapper -->
+  </div>
+</div>
+<!-- /.container-fluid -->
+{% endblock content %}
 
-    <!-- Scroll to Top Button-->
-    
-    <a class="scroll-to-top rounded" href="#page-top">
-      <i class="fas fa-angle-up"></i>
-    </a>
+{% block modals %}
+<!-- warningModal Modal-->
+<div class="modal fade" id="warningModal">
+<div class="modal-dialog modal-dialog-centered">
+  <div class="modal-content">
+    <!-- Modal Header -->
+    <div class="modal-header">
+      <h4 class="modal-title text-danger">Bypass Product</h4>
+      <button type="button" class="close" data-dismiss="modal">×</button>
+    </div>
 
-
-    <!-- warningModal Modal-->
-    <div class="modal fade" id="warningModal">
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-          <!-- Modal Header -->
-          <div class="modal-header">
-            <h4 class="modal-title text-danger">Bypass Product</h4>
-            <button type="button" class="close" data-dismiss="modal">×</button>
+    <!-- Modal body -->
+    <div class="modal-body">
+      <form method="post" action="{% url "bypass-invoice-item" invoice.invoice_no %}">
+        <div class="form-group row">
+          <div class="col-sm-10">
+            <h4>Do you want to continue ?</h4>
           </div>
+        </div>
 
-          <!-- Modal body -->
-          <div class="modal-body">
-            <form method="post" action="{% url "bypass-invoice-item" invoice.invoice_no %}">
-              <div class="form-group row">
-                <div class="col-sm-10">
-                  <h4>Do you want to continue ?</h4>
-                </div>
-              </div>
-
-              {% csrf_token %}
-              <div class="form-group row">
-                <label for="barcode" class="col-sm-2 col-form-label"
-                  >Barcode</label
-                >
-                <div class="col-sm-10">
-                  <input
-                    type="text"
-                    readonly
-                    class="form-control form-control-sm"
-                    id="barcode"
-                    value=""
-                  />
-                </div>
-              </div>
-              <div class="form-group row">
-                <label for="sku-name" class="col-sm-2 col-form-label"
-                  >S.K.U.
-                </label>
-                <div class="col-sm-10">
-                  <input
-                    type="text"
-                    readonly
-                    class="form-control form-control-sm"
-                    id="sku-name"
-                    value=""
-                  />
-                </div>
-              </div>
-              <div class="form-group row">
-                <label for="sku-against-name" class="col-sm-2 col-form-label"
-                  >ByPass S.K.U.</label
-                >
-                <input type="hidden" class="form-control" value={{pending_sku_names}} id="pending_sku_list" />
-                <div class="col-sm-10">
-                  <select
-                    class="form-control form-control-sm"
-                    id="sku-against-name"
-                  >
-                    {% for sku in invoice_sku_list_pending %}
-                    <option value="{{sku.stock_item.sku_name}}">
-                      {{ sku.stock_item.sku_name }}
-                    </option>
-                    {% endfor %}
-                  </select>
-                  {% comment %}
-                  <input
-                    type="text"
-                    readonly
-                    class="form-control form-control-sm"
-                    id="sku-against-name"
-                    value=""
-                  />
-                  {% endcomment %}
-                </div>
-              </div>
-            </form>
+        {% csrf_token %}
+        <div class="form-group row">
+          <label for="barcode" class="col-sm-2 col-form-label"
+            >Barcode</label
+          >
+          <div class="col-sm-10">
+            <input
+              type="text"
+              readonly
+              class="form-control form-control-sm"
+              id="barcode"
+              value=""
+            />
           </div>
-
-          <!-- Modal footer -->
-          <div class="modal-footer">
-            <button type="button" class="btn btn-danger" data-dismiss="modal">
-              Close
-            </button>
-            <button
-              type="submit"
-              class="btn btn-primary"
-              data-dismiss="modal"
-              id="byPassDataBtn"
+        </div>
+        <div class="form-group row">
+          <label for="sku-name" class="col-sm-2 col-form-label"
+            >S.K.U.
+          </label>
+          <div class="col-sm-10">
+            <input
+              type="text"
+              readonly
+              class="form-control form-control-sm"
+              id="sku-name"
+              value=""
+            />
+          </div>
+        </div>
+        <div class="form-group row">
+          <label for="sku-against-name" class="col-sm-2 col-form-label"
+            >ByPass S.K.U.</label
+          >
+          <input type="hidden" class="form-control" value={{pending_sku_names}} id="pending_sku_list" />
+          <div class="col-sm-10">
+            <select
+              class="form-control form-control-sm"
+              id="sku-against-name"
             >
-              Continue
-            </button>
+              {% for sku in invoice_sku_list_pending %}
+              <option value="{{sku.stock_item.sku_name}}">
+                {{ sku.stock_item.sku_name }}
+              </option>
+              {% endfor %}
+            </select>
+            {% comment %}
+            <input
+              type="text"
+              readonly
+              class="form-control form-control-sm"
+              id="sku-against-name"
+              value=""
+            />
+            {% endcomment %}
           </div>
         </div>
-      </div>
+      </form>
     </div>
 
+    <!-- Modal footer -->
+    <div class="modal-footer">
+      <button type="button" class="btn btn-danger" data-dismiss="modal">
+        Close
+      </button>
+      <button
+        type="submit"
+        class="btn btn-primary"
+        data-dismiss="modal"
+        id="byPassDataBtn"
+      >
+        Continue
+      </button>
+    </div>
+  </div>
+</div>
+</div>
+{% endblock modals %}
 
 
+{% block js %}
+<!-- Page level plugins -->
+<script src="{% static "assets/vendor/datatables/jquery.dataTables.min.js" %}"></script>
+<script src="{% static "assets/vendor/datatables/dataTables.bootstrap4.min.js" %}"></script>
 
-    <!-- Bootstrap core JavaScript-->
-    <script src="{% static "assets/vendor/bootstrap/js/bootstrap.bundle.min.js " %}"></script>
-    <script src="{% static "assets/vendor/jquery/jquery.min.js" %}"></script>
+<!-- Page level custom scripts -->
+<script src="{% static "assets/js/demo/datatables-demo.js" %}"></script>
 
-    <!-- Core plugin JavaScript-->
-    <script src="{% static "assets/vendor/jquery-easing/jquery.easing.min.js" %}"></script>
+<script>
+  $(document).ready(function () {
+    $("#invoiceVerifyDataTable").DataTable({
+      lengthMenu: [
+        [5, 10, 25, -1],
+        [5, 10, 25, "All"],
+      ],
+    });
+  });
+</script>
 
-    <!-- Custom scripts for all pages-->
-    <script src="{% static "assets/js/sb-admin-2.min.js" %}"></script>
+<script>
+  $(document).ready(function (val) {
+    //$("#barcodeInput").focus();
+    $("#barcodeInput").on("input", function (e) {
+      //Fetch form to apply custom Bootstrap validation
+      $("#barcodeInput").removeClass("is-invalid");
+      $("#error-alert").remove();
 
-    <!-- Page level plugins -->
-    <script src="{% static "assets/vendor/datatables/jquery.dataTables.min.js" %}"></script>
-    <script src="{% static "assets/vendor/datatables/dataTables.bootstrap4.min.js" %}"></script>
+      var form = $("#needs-validation");
 
-    <!-- Page level custom scripts -->
-    <script src="{% static "assets/js/demo/datatables-demo.js" %}"></script>
-
-    <script>
-      $(document).ready(function () {
-        $("#invoiceVerifyDataTable").DataTable({
-          lengthMenu: [
-            [5, 10, 25, -1],
-            [5, 10, 25, "All"],
-          ],
-        });
-      });
-    </script>
-
-    <script>
-      $(document).ready(function (val) {
-        //$("#barcodeInput").focus();
-        $("#barcodeInput").on("input", function (e) {
-          //Fetch form to apply custom Bootstrap validation
-          $("#barcodeInput").removeClass("is-invalid");
-          $("#error-alert").remove();
-
-          var form = $("#needs-validation");
-
-          // post data for server
-          var check_sku = $("#1").text();
-          var barcode_no = $(this).val().trim();
-          // TODO: Replace input hidden with variable
-          var invoice_no = $("#invoice-no").val();
+      // post data for server
+      var check_sku = $("#1").text();
+      var barcode_no = $(this).val().trim();
+      // TODO: Replace input hidden with variable
+      var invoice_no = $("#invoice-no").val();
 
 
-          if (!form[0].checkValidity()) {
-            e.preventDefault();
-            e.stopPropagation();
-            // TODO: Remove all console.log
-            // console.log("Not going anywhere....")
-          }
-          else
-          {
-            // console.log("going to server....");
-            
-            $.ajax({
-              type: "POST",
-              url: window.location.href + "scan/",
-              data: {
-                //"invoice": invoice.invoice_no,
-                "barcode": barcode_no,
-                // TODO: Remove check sku logic
-                "check-sku": check_sku,
-                "csrfmiddlewaretoken": $("input[name=csrfmiddlewaretoken]").val(),
-              },
-              success: function (val) {
-                console.log(val);
-                if (val["status"] === "success") {
-                  location.reload();                  
-                  // delete the row with barcode id
-                  // append row with new data
-                  // clear searchbar field
-                  
-                } else if (val["status"] === "warning" &&  val["codename"] === "bypass_sku_item" ) {
-                  v = $("#pending_sku_list").val();
-                  $("#OpenModal").click();
-                  $("#sku-name").attr("value", val["data"]["sku-name"]);
-                  $("#barcode").attr("value", barcode_no);
-                  //$("#sku-against-name").attr("value", check_sku);
-                }
-                else if (val["status"] === "warning" &&  val["codename"] === "invoice_scanning_completed" ) {
-                  const error_message = val["msg"];
-
-                  var alert_element = `<div class=" m-3 alert alert-warning alert-dismissible fade show" id="error-alert" role="alert"> ${error_message}<button type="button" class="close" data-dismiss="alert" aria-label="Close"> <span aria-hidden="true">&times;</span></button></div>`;
-                  $(".container-fluid").before(alert_element);
-                }
-                else
-                {
-                  const error_message = val["msg"];
-                  //alert(val["msg"])
-                  var alert_element = `<div class=" m-3 alert alert-danger alert-dismissible fade show" id="error-alert" role="alert"> ${error_message}<button type="button" class="close" data-dismiss="alert" aria-label="Close"> <span aria-hidden="true">&times;</span></button></div>`;
-                  $(".container-fluid").before(alert_element);
-
-                }
-              },
-            });
-          }
-          form.addClass("was-validated");
-
-        });
-      });
-    </script>
-
-    <script>
-      $("#byPassDataBtn").on("click", function () {
-        var barcode_no = $("#barcode").val();
-        var invoice_no = {{invoice.invoice_no}};
-        var sku_name = $("#sku-name").val();
-        var sku_against_name = $("#sku-against-name").val();
-        console.log("Invoice ",invoice_no);
+      if (!form[0].checkValidity()) {
+        e.preventDefault();
+        e.stopPropagation();
+        // TODO: Remove all console.log
+        // console.log("Not going anywhere....")
+      }
+      else
+      {
+        // console.log("going to server....");
+        
         $.ajax({
           type: "POST",
-          url: `/invoice/verify/${invoice_no}/bypass/`,
+          url: window.location.href + "scan/",
           data: {
-            barcode: barcode_no,
-            invoice: invoice_no,
-            sku_name: sku_name,
-            sku_against_name: sku_against_name,
-            csrfmiddlewaretoken: $("input[name=csrfmiddlewaretoken]").val(),
+            //"invoice": invoice.invoice_no,
+            "barcode": barcode_no,
+            // TODO: Remove check sku logic
+            "check-sku": check_sku,
+            "csrfmiddlewaretoken": $("input[name=csrfmiddlewaretoken]").val(),
           },
           success: function (val) {
-            const error_message = val["msg"];
+            console.log(val);
+            if (val["status"] === "success") {
+              location.reload();                  
+              // delete the row with barcode id
+              // append row with new data
+              // clear searchbar field
+              
+            } else if (val["status"] === "warning" &&  val["codename"] === "bypass_sku_item" ) {
+              v = $("#pending_sku_list").val();
+              $("#OpenModal").click();
+              $("#sku-name").attr("value", val["data"]["sku-name"]);
+              $("#barcode").attr("value", barcode_no);
+              //$("#sku-against-name").attr("value", check_sku);
+            }
+            else if (val["status"] === "warning" &&  val["codename"] === "invoice_scanning_completed" ) {
+              const error_message = val["msg"];
 
-            if (val["codename"] === "bypass_success") {
-              location.reload();
-            } 
-            else if (val["codename"] === "sku_scan_complete") {
               var alert_element = `<div class=" m-3 alert alert-warning alert-dismissible fade show" id="error-alert" role="alert"> ${error_message}<button type="button" class="close" data-dismiss="alert" aria-label="Close"> <span aria-hidden="true">&times;</span></button></div>`;
               $(".container-fluid").before(alert_element);
             }
-            else{
+            else
+            {
+              const error_message = val["msg"];
+              //alert(val["msg"])
               var alert_element = `<div class=" m-3 alert alert-danger alert-dismissible fade show" id="error-alert" role="alert"> ${error_message}<button type="button" class="close" data-dismiss="alert" aria-label="Close"> <span aria-hidden="true">&times;</span></button></div>`;
               $(".container-fluid").before(alert_element);
+
             }
           },
         });
-      });
-    </script>
-
-    <script>
-      $(".dispatch-stock").click(function(){
-        $(this).attr('disabled', true);
-        var sku_barcode_no = $(this).attr('data-sku-barcode-no');
-        var invoice_no = $(this).attr('data-invoice-no');
-        var sku_name = $(this).attr('data-sku-name');
-        
-        console.log(sku_barcode_no, invoice_no, sku_name);
-        $.ajax({
-          type:"GET",
-          url: "{% url 'dispatch-sku' %}",
-          data:{
-            "invoice_no": invoice_no,
-            "sku_name": sku_name,
-            "sku_barcode_no": sku_barcode_no
-
-        },
-        success: function(val){
-          console.log(val);
-          if (val["status"] === "success")
-          {
-            const success_message = val['msg'];
-            var alert_element = `<div class=" m-3 alert alert-success alert-dismissible fade show" id="error-alert" role="alert"> ${success_message}<button type="button" class="close" data-dismiss="alert" aria-label="Close"> <span aria-hidden="true">&times;</span></button></div>`;
-              $(".container-fluid").before(alert_element);
-
-            location.reload();
-            
-          }
-          else
-            {
-              $(this).attr('enable', true);
-              const error_message = val['msg'];
-              var alert_element = `<div class=" m-3 alert alert-danger alert-dismissible fade show" id="error-alert" role="alert"> ${error_message}<button type="button" class="close" data-dismiss="alert" aria-label="Close"> <span aria-hidden="true">&times;</span></button></div>`;
-                $(".container-fluid").before(alert_element);
-            }
       }
-        })
+      form.addClass("was-validated");
+
+    });
+  });
+</script>
+
+<script>
+  $("#byPassDataBtn").on("click", function () {
+    var barcode_no = $("#barcode").val();
+    var invoice_no = {{invoice.invoice_no}};
+    var sku_name = $("#sku-name").val();
+    var sku_against_name = $("#sku-against-name").val();
+    console.log("Invoice ",invoice_no);
+    $.ajax({
+      type: "POST",
+      url: `/invoice/verify/${invoice_no}/bypass/`,
+      data: {
+        barcode: barcode_no,
+        invoice: invoice_no,
+        sku_name: sku_name,
+        sku_against_name: sku_against_name,
+        csrfmiddlewaretoken: $("input[name=csrfmiddlewaretoken]").val(),
+      },
+      success: function (val) {
+        const error_message = val["msg"];
+
+        if (val["codename"] === "bypass_success") {
+          location.reload();
+        } 
+        else if (val["codename"] === "sku_scan_complete") {
+          var alert_element = `<div class=" m-3 alert alert-warning alert-dismissible fade show" id="error-alert" role="alert"> ${error_message}<button type="button" class="close" data-dismiss="alert" aria-label="Close"> <span aria-hidden="true">&times;</span></button></div>`;
+          $(".container-fluid").before(alert_element);
+        }
+        else{
+          var alert_element = `<div class=" m-3 alert alert-danger alert-dismissible fade show" id="error-alert" role="alert"> ${error_message}<button type="button" class="close" data-dismiss="alert" aria-label="Close"> <span aria-hidden="true">&times;</span></button></div>`;
+          $(".container-fluid").before(alert_element);
+        }
+      },
+    });
+  });
+</script>
+
+<script>
+  $(".dispatch-stock").click(function(){
+    $(this).attr('disabled', true);
+    var sku_barcode_no = $(this).attr('data-sku-barcode-no');
+    var invoice_no = $(this).attr('data-invoice-no');
+    var sku_name = $(this).attr('data-sku-name');
+    
+    console.log(sku_barcode_no, invoice_no, sku_name);
+    $.ajax({
+      type:"GET",
+      url: "{% url 'dispatch-sku' %}",
+      data:{
+        "invoice_no": invoice_no,
+        "sku_name": sku_name,
+        "sku_barcode_no": sku_barcode_no
+
+    },
+    success: function(val){
+      console.log(val);
+      if (val["status"] === "success")
+      {
+        const success_message = val['msg'];
+        var alert_element = `<div class=" m-3 alert alert-success alert-dismissible fade show" id="error-alert" role="alert"> ${success_message}<button type="button" class="close" data-dismiss="alert" aria-label="Close"> <span aria-hidden="true">&times;</span></button></div>`;
+          $(".container-fluid").before(alert_element);
+
+        location.reload();
         
-      })
-    </script>
-  </body>
-</html>
+      }
+      else
+        {
+          $(this).attr('enable', true);
+          const error_message = val['msg'];
+          var alert_element = `<div class=" m-3 alert alert-danger alert-dismissible fade show" id="error-alert" role="alert"> ${error_message}<button type="button" class="close" data-dismiss="alert" aria-label="Close"> <span aria-hidden="true">&times;</span></button></div>`;
+            $(".container-fluid").before(alert_element);
+        }
+  }
+    })
+    
+  })
+</script>
+{% endblock js %}
