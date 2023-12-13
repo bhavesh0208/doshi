@@ -22,26 +22,23 @@
                                 <h1 class="h4 text-gray-900 mb-4">Welcome Back!</h1>
                             </div>
                             {% if messages %}
-                            {% for message in messages %}
-                            {% if message.tags == "success" %}
-                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert"
-                                id="otpAlert">
-
-                                <strong>{{ message }}</strong>
-                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                    <span aria-hidden="true">&times;</span>
-                                </button>
-                            </div>
-                            {% else %}
-                            <div class="alert alert-danger alert-dismissible fade show" role="alert" id="otpAlert">
-
-                                <strong>{{ message }}</strong>
-                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                    <span aria-hidden="true">&times;</span>
-                                </button>
-                            </div>
-                            {% endif %}
-                            {% endfor %}
+                                {% for message in messages %}
+                                    {% if message.tags == "error" %}
+                                    <div class="alert alert-danger alert-dismissible fade show" role="alert" id="otpAlert">
+                                        <p>{{ message }}</p>
+                                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                            <span aria-hidden="true">&times;</span>
+                                        </button>
+                                    </div>
+                                    {% else %}
+                                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert" id="otpAlert">
+                                        <p>{{ message }}</p>
+                                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                            <span aria-hidden="true">&times;</span>
+                                        </button>
+                                    </div>
+                                    {% endif %}
+                                {% endfor %}
                             {% endif %}
 
                             <form method="post" action="{% url 'login' %}" class="user needs-validation" novalidate>

@@ -11,7 +11,7 @@ from django.core.exceptions import ImproperlyConfigured
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.http import HttpResponse, JsonResponse
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_GET
 from django.shortcuts import redirect, render
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
@@ -26,8 +26,11 @@ REDIRECT_PATH_URI_SESSION_TOKEN = "_redirect_url_token"
 token_generator = default_token_generator
 
 
-def index(request):
-    total_bypass_sku = ByPassModel.objects.filter(bypass_date=date.today()).count()
+@login_required(login_url="login")
+@permission_required("app.view_skuitems", raise_exception=True)
+def dashboard(request):
+    total_bypass_sku = ByPassModel.objects.filter(created_at=date.today()).count()
+
     total_sales = sum(
         [
             float(i["invoice_item_amount"])
@@ -47,7 +50,7 @@ def index(request):
 
     return render(
         request,
-        "index.html",
+        "dashboard.html",
         {
             "total_bypass_sku": total_bypass_sku,
             "total_sales": total_sales,
@@ -57,7 +60,7 @@ def index(request):
     )
 
 
-# def index(request):
+# def dashboard(request):
 #     if request.user.is_authenticated:
 #         # role = request.session["role"]
 #         role = "EMPLOYEE"
@@ -93,7 +96,7 @@ def index(request):
 
 #             return render(
 #                 request,
-#                 "index.html",
+#                 "dashboard.html",
 #                 {
 #                     "total_bypass_sku": total_bypass_sku,
 #                     "total_sales": total_sales,
@@ -120,7 +123,11 @@ def register(request):
             }
             user = User(**data)
             user.full_clean()
-            User.objects.create_user(**data)
+            user = User.objects.create_user(**data)
+            messages.info(
+                request,
+                "Your account created successfully. Please contact admininstrator to activate your account.",
+            )
             return redirect("login")
 
         except ValidationError as ve:
@@ -131,7 +138,7 @@ def register(request):
             messages.error(request, str(e))
             return redirect("register")
 
-    return render(request, "register.html")
+    return render(request, "auth/register.html")
 
 
 def login_user(request):
@@ -153,7 +160,7 @@ def login_user(request):
                     redirect_to = request.session.get(REDIRECT_PATH_URI_SESSION_TOKEN)
                     del request.session[REDIRECT_PATH_URI_SESSION_TOKEN]
                     return redirect(redirect_to)
-                return redirect("index")
+                return redirect("dashboard")
 
         except Exception as e:
             messages.error(request, e)
@@ -165,7 +172,7 @@ def login_user(request):
         redirect_to = request.GET.get(settings.REDIRECT_FIELD_NAME)
         if redirect_to:
             request.session.setdefault(REDIRECT_PATH_URI_SESSION_TOKEN, redirect_to)
-        return render(request, "login.html")
+        return render(request, "auth/login.html")
 
 
 def logout_user(request):
@@ -196,7 +203,7 @@ def forgot_password(request):
             messages.error(request, e)
             return redirect("forgot-password")
 
-    return render(request, "forgot-password.html")
+    return render(request, "auth/forgot-password.html")
 
 
 def verify_otp(request):
@@ -299,10 +306,10 @@ def reset_password(request, **kwargs):
 
 
 @login_required(login_url="login")
-@permission_required("app.view_skuitems", raise_exception=True)
-def get_stock_items(request, page):
+@permission_required("app.view_stockitem", raise_exception=True)
+def get_stock_items(request):
     try:
-        sku_list = StockItem.objects.all()
+        sku_list = StockItem.objects.all()[:10]
         # if request.user.is_authenticated:
         #     role = request.session["role"]
 
@@ -313,27 +320,67 @@ def get_stock_items(request, page):
         #     else:
         #         return redirect("invoices")
 
-        query = request.GET.get("query", "")
-        if query:
-            sku_list = sku_list.filter(
-                Q(sku_name__icontains=query) | Q(sku_serial_no__icontains=query)
-            ).order_by("sku_name")
-        paginator = Paginator(sku_list, 25)
-        page_number = page
-        sku_obj = paginator.get_page(page_number)
-        sku_obj.adjusted_elided_pages = paginator.get_elided_page_range(
-            page_number, on_each_side=1
-        )
-        return render(request, "sku-list.html", {"sku_obj": sku_obj})
+        # query = request.GET.get("query", "")
+        # if query:
+        #     sku_list = sku_list.filter(
+        #         Q(sku_name__icontains=query) | Q(sku_serial_no__icontains=query)
+        #     ).order_by("sku_name")
+        # paginator = Paginator(sku_list, 25)
+        # page_number = page
+        # sku_obj = paginator.get_page(page_number)
+        # sku_obj.adjusted_elided_pages = paginator.get_elided_page_range(
+        #     page_number, on_each_side=1
+        # )
+        return render(request, "sku-list.html", {"sku_obj": sku_list})
     except Exception as e:
         print(f"{e}")
-        return redirect("index")
+        return redirect("dashboard")
 
 
-# @login_required(login_url="login")
-# @permission_required("app.view_invoicetest", raise_exception=True)
+@require_POST
+@login_required(login_url="login")
+@permission_required("app.change_stockitem", raise_exception=True)
+def update_sku(request, uid):
+    # sku_serial_no = request.POST.get("update-sku-srno")
+    sku_name = request.POST.get("update-sku-name")
+    sku_base_qty = request.POST.get("update-sku-qty")
+    print(request.POST)
+    try:
+        from bson import ObjectId
+
+        sku_item = StockItem.objects.get(_id=ObjectId(uid))
+        # sku_name_before = sku_item.sku_name
+        # sku_base_qty_before = sku_item.sku_base_qty
+        # sku_item.sku_name = sku_name
+        sku_item.sku_base_qty = int(sku_base_qty)
+        sku_item.save()
+        # user_id = request.session["id"]
+        # user = User.objects.get(id=user_id)
+        # description = f"Updated S.K.U.Name from {sku_name_before} to {sku_name} and Base Quantity from {sku_base_qty_before} to {sku_base_qty}."
+        # activity_type = "change"
+        # Activity.objects.create(
+        #     activity_type=activity_type,
+        #     activity_description=description,
+        #     activity_user=user,
+        # )
+        messages.success(request, "S.K.U. update successful.")
+    except ObjectDoesNotExist:
+        messages.error(request, "S.K.U. update unsuccessful.")
+    except ValueError:
+        messages.error(
+            request,
+            "please provide valid integer base quantity, S.K.U. update unsuccessful.",
+        )
+    except Exception as ep:
+        messages.error(request, f"{str(ep)}")
+    finally:
+        return redirect("sku-items")
+
+
+@login_required(login_url="login")
+@permission_required("app.view_invoicetest", raise_exception=True)
 def invoices(request):
-    invoices = InvoiceTest.objects.all()[:1]
+    invoices = InvoiceTest.objects.all()[:3]
     return render(
         request,
         "invoices.html",
@@ -341,8 +388,8 @@ def invoices(request):
     )
 
 
-# @login_required(login_url="login")
-# @permission_required("app.view_invoicetest", raise_exception=True)
+@login_required(login_url="login")
+@permission_required("app.view_invoicetest", raise_exception=True)
 def invoice_details(request, invoice_no):
     # if request.user.is_authenticated:
     #     role = request.session["role"]
@@ -366,6 +413,8 @@ def invoice_details(request, invoice_no):
     )
 
 
+@login_required(login_url="login")
+@permission_required("app.view_bypassmodel", raise_exception=True)
 def bypass_products(request):
     # if request.user.is_authenticated:
     #     role = request.session["role"]
@@ -376,6 +425,8 @@ def bypass_products(request):
     return render(request, "bypass-products.html", {"bypass_list": get_bypass_list})
 
 
+@login_required(login_url="login")
+@permission_required("app.view_invoicetest", raise_exception=True)
 def invoice_verify(request, invoice_no):
     try:
         invoice = InvoiceTest.objects.get(invoice_no=str(invoice_no))
@@ -405,14 +456,15 @@ def invoice_verify(request, invoice_no):
 
 # api end point for scanning invoice sku item
 @require_POST
+@login_required(login_url="login")
+@permission_required(["app.change_invoicetest", "app."], raise_exception=True)
 def verify_sku_scan(request, invoice_no):
     """"""
 
     try:
-        serial_no = request.POST["barcode"]
+        serial_no = request.POST.get("barcode")
         invoice = InvoiceTest.objects.get(invoice_no=invoice_no)
         context = dict()
-        print(invoice.status)
         if invoice.status == SCAN_STATUS_PENDING:
             # check if above stock exists in invoice
             invoice_stock_item = invoice._get_invoice_sku_item(serial_no)
@@ -481,6 +533,8 @@ def verify_sku_scan(request, invoice_no):
 
 
 @require_POST
+@login_required(login_url="login")
+@permission_required(["app.change_invoicetest", "app."], raise_exception=True)
 def bypass_invoice_sku_item(request, invoice_no):
     try:
         sku_name = request.POST["sku_name"]
@@ -540,6 +594,200 @@ def bypass_invoice_sku_item(request, invoice_no):
         )
 
 
+# Rework on  this logic -> need to improve
+@require_POST
+@login_required(login_url="login")
+@permission_required("app.change_invoicestockitem", raise_exception=True)
+def update_invoiceitem_scan_qty(request, invoice_no):
+    try:
+        invoice_item_total_scan = request.POST.get("invoice-item-total-scan")
+        invoice_item_barcode = request.POST.get("invoice-barcode")
+        try:
+            invoice_item_total_scan = int(invoice_item_total_scan)
+        except ValueError:
+            messages.error(
+                request,
+                f'Sorry, but the total scan value must be a whole number (integer). The value you entered, "{invoice_item_total_scan}", is not a valid integer.',
+            )
+            return redirect("invoice-details", invoice_no=invoice_no)
+
+        # Fetch data
+        invoice = InvoiceTest.objects.get(invoice_no=invoice_no)
+        invoice_stock_item = invoice.invoice_items.get(
+            stock_item__sku_serial_no=invoice_item_barcode
+        )
+
+        invoice_stock_item.update_total_scan(
+            total_scan=invoice_item_total_scan, ignore_base_qty=True
+        )
+        messages.success(
+            request,
+            f'The total scans for S.K.U. "{invoice_stock_item.stock_item.sku_name}" have been successfully updated.',
+        )
+        return redirect("invoice-details", invoice_no=invoice_no)
+    except InvoiceStockItem.DoesNotExist:
+        messages.error(request, f"Invalid Barcode No. {invoice_item_barcode}")
+        return redirect("invoice-details", invoice_no=invoice_no)
+    except InvoiceTest.DoesNotExist:
+        messages.error(request, f"Invalid Invoice No. {invoice_no}")
+        return redirect("invoices")
+    except Exception as e:
+        messages.error(request, f"Something went wrong: {str(e)}")
+        return redirect("invoices")
+
+
+@require_GET
+@login_required(login_url="login")
+def dispatch_sku(request, invoice_no, uid):
+    try:
+        print(invoice_no, uid)
+        from bson import ObjectId
+
+        invoice = InvoiceTest.objects.get(invoice_no=invoice_no)
+        invoice_sku_item = invoice.invoice_items.get(_id=ObjectId(uid))
+        invoice_sku_item.override()
+        messages.success(
+            request,
+            f'S.K.U. "{invoice_sku_item.stock_item.sku_name}" overrided successfully',
+        )
+        return redirect("invoice-verify", invoice_no=invoice_no)
+        # if invoice_sku_list.exists():
+        #     invoice_sku_list.update(item_scanned_status=SCAN_STATUS_COMPLETED)
+    except InvoiceStockItem.DoesNotExist:
+        messages.error(
+            request,
+            f'Sorry, but the item with the ID "{uid}" is invalid. Please do not attempt to modify the URL.',
+        )
+        return redirect("invoice-verify", invoice_no=invoice_no)
+    except InvoiceTest.DoesNotExist:
+        messages.error(request, f"Invalid Invoice No. {invoice_no}")
+    except Exception as e:
+        messages.error(request, f"Something went wrong: {str(e)}")
+        return redirect("invoices")
+        # try:
+        #     role = request.session["role"]
+        #     if role in ["CLIENT_HCH", "CLIENT"]:
+        #         return redirect("sku-items", page=1)
+        #     elif role in ["EMPLOYEE", "ADMIN"]:
+        #         return redirect("invoices")
+        #     else:
+
+        #         if request.is_ajax:
+        #             invoice_no = request.GET.get("invoice_no", None)
+        #             sku_name = request.GET.get("sku_name", None)
+        #             sku_barcode_no = request.GET.get("sku_barcode_no", None)
+
+        #             invoice_sku_list = Invoice.objects.filter(
+        #                 invoice_no=invoice_no,
+        #             )
+
+        #             sku_item = StockItem.objects.filter(
+        #                 sku_name=sku_name, sku_serial_no=sku_barcode_no
+        #             )
+        #             if sku_item.exists():
+        #                 invoice_item_obj = Invoice.objects.get(
+        #                     invoice_no=invoice_no, invoice_item=sku_item[0]
+        #                 )
+
+        #                 invoice_item_obj.invoice_item_scanned_status = "COMPLETED"
+        #                 user = User.objects.get(id=request.session["id"])
+        #                 print(isinstance(user, User), invoice_item_obj.invoice_item)
+        #                 invoice_item_obj.invoice_user = User.objects.get(
+        #                     id=request.session["id"]
+        #                 )
+        #                 invoice_item_obj.invoice_item_total_scan = (
+        #                     invoice_item_obj.invoice_item_qty
+        #                 )
+        #                 invoice_item_obj.save()
+        #             else:
+        #                 raise Exception("S.k.U. not exists.")
+        #             # for item in invoice_sku_list:
+        #             #     item.invoice_item_scanned_status = "COMPLETED"
+        #             #     item.save()
+
+        #             # user_id = request.session["id"]
+        #             # user = User.objects.get(id=user_id)
+
+        #             # description = f"Invoice No: {invoice_no} dispatched by {user}."
+        #             # Activity.objects.create(
+        #             #     activity_type="DISPATCH",
+        #             #     activity_user=user,
+        #             #     activity_description=description,
+        #             # )
+        #             return JsonResponse(
+        #                 {
+        #                     "status": "success",
+        #                     "msg": f"S.K.U. {sku_name} dispatched successfully.",
+        #                 }
+        #             )
+        # except Exception as e:
+        #     JsonResponse({"status": "error", "msg": e})
+
+
+def dispatch_invoice(request, invoice_no):
+    # if request.user.is_authenticated:
+    try:
+        # role = request.session["role"]
+        # if role in ["CLIENT_HCH", "CLIENT"]:
+        #     return redirect("sku-items", page=1)
+        # elif role in ["DISPATCHER"]:
+        #     return redirect("invoices")
+        # else:
+        invoice = InvoiceTest.objects.get(invoice_no=invoice_no)
+        invoice_sku_list = invoice.invoice_items.all()
+        if invoice_sku_list.exists():
+            invoice_sku_list.update(item_scanned_status=SCAN_STATUS_COMPLETED)
+
+        # user_id = request.session["id"]
+        # user = User.objects.get(id=user_id)
+
+        # description = f"Invoice No: {invoice_no} dispatched by {user}."
+        # Activity.objects.create(
+        #     activity_type="DISPATCH",
+        #     activity_user=user,
+        #     activity_description=description,
+        # )
+        messages.success(
+            request, f"Invoice No. {invoice.invoice_no} overrided successfully"
+        )
+        return redirect("invoices")
+        # return JsonResponse(
+        #     {
+        #         "status": "success",
+        #         "msg": f"Invoice No.{invoice_no} dispatched successfully.",
+        #     }
+        # )
+    except InvoiceTest.DoesNotExist:
+        messages.error(request, f"Invalid Invoice No. {invoice_no}")
+    except Exception as e:
+        messages.error(request, f"Something went wrong: {str(e)}")
+        return redirect("invoices")
+
+
+@login_required(login_url="login")
+@permission_required("app.view_activity", raise_exception=True)
+def get_activity_logs(request):
+    # if request.user.is_authenticated:
+    #     role = request.session["role"]
+    #     if role in ["CLIENT_HCH", "CLIENT"]:
+    #         return redirect("sku-items", page=1)
+    #     elif role in ["DISPATCHER"]:
+    #         return redirect("invoices")
+    #     elif role in ["EMPLOYEE"]:
+    #         return redirect("dashboard")
+    #     else:
+    activity_data = Activity.objects.filter(action_user=request.user)
+
+    return render(request, "activity-logs.html", {"activity_data": activity_data})
+
+
+@login_required(login_url="login")
+@permission_required("app.view_company", raise_exception=True)
+def get_company_list(request):
+    companies = Company.objects.all()
+    return render(request, "companies.html", {"company_data": companies})
+
+
 def generate_csv(request):
     response = HttpResponse(content_type="text/csv")
     response["Content-Disposition"] = "attachment; filename='BypassData.csv'"
@@ -575,193 +823,6 @@ def generate_csv(request):
         writer.writerow(bypass_data)
 
     return response
-
-
-# Rework on  this logic -> need to improve
-def update_scan_qty(request, invoice_no):
-    if request.user.is_authenticated:
-        try:
-            if request.method == "POST":
-                get_invoice_no = invoice_no
-                invoice_item_total_scan = request.POST["invoice-item-total-scan"]
-                invoice_item_barcode = request.POST["invoice-barcode"]
-
-                print(invoice_item_total_scan, get_invoice_no)
-                sku_obj = StockItem.objects.get(sku_serial_no=invoice_item_barcode)
-
-                if invoice_item_total_scan == "":
-                    invoice_item_total_scan = sku_obj.sku_base_qty
-                invoice = Invoice.objects.filter(
-                    invoice_no=get_invoice_no, invoice_item_id=sku_obj.id
-                )
-                print(sku_obj, invoice_item_barcode, invoice_item_total_scan)
-                invoice.update(invoice_item_total_scan=invoice_item_total_scan)
-
-                if int(invoice[0].invoice_item_total_scan) == int(
-                    invoice[0].invoice_item_qty
-                ):
-                    invoice.update(invoice_item_scanned_status="COMPLETED")
-                elif int(invoice[0].invoice_item_total_scan) > int(
-                    invoice[0].invoice_item_qty
-                ):
-                    invoice.update(invoice_item_scanned_status="EXTRA")
-                else:
-                    invoice.update(invoice_item_scanned_status="PENDING")
-
-                return redirect("invoice-details", invoice_no=get_invoice_no)
-        except StockItem.DoesNotExist:
-            print("S.K.U. does not exists")
-            messages.error(request, "Invalid Barcode")
-            return redirect("invoice-details", invoice_no=get_invoice_no)
-        except Exception as e:
-            print("Error - ", e)
-            messages.error(request, e)
-            return redirect("invoice-details", invoice_no=get_invoice_no)
-
-
-def dispatch_sku(request):
-    if request.user.is_authenticated:
-        try:
-            role = request.session["role"]
-            if role in ["CLIENT_HCH", "CLIENT"]:
-                return redirect("sku-items", page=1)
-            elif role in ["EMPLOYEE", "ADMIN"]:
-                return redirect("invoices")
-            else:
-                if request.is_ajax:
-                    invoice_no = request.GET.get("invoice_no", None)
-                    sku_name = request.GET.get("sku_name", None)
-                    sku_barcode_no = request.GET.get("sku_barcode_no", None)
-
-                    invoice_sku_list = Invoice.objects.filter(
-                        invoice_no=invoice_no,
-                    )
-
-                    sku_item = StockItem.objects.filter(
-                        sku_name=sku_name, sku_serial_no=sku_barcode_no
-                    )
-                    if sku_item.exists():
-                        invoice_item_obj = Invoice.objects.get(
-                            invoice_no=invoice_no, invoice_item=sku_item[0]
-                        )
-
-                        invoice_item_obj.invoice_item_scanned_status = "COMPLETED"
-                        user = User.objects.get(id=request.session["id"])
-                        print(isinstance(user, User), invoice_item_obj.invoice_item)
-                        invoice_item_obj.invoice_user = User.objects.get(
-                            id=request.session["id"]
-                        )
-                        invoice_item_obj.invoice_item_total_scan = (
-                            invoice_item_obj.invoice_item_qty
-                        )
-                        invoice_item_obj.save()
-                    else:
-                        raise Exception("S.k.U. not exists.")
-                    # for item in invoice_sku_list:
-                    #     item.invoice_item_scanned_status = "COMPLETED"
-                    #     item.save()
-
-                    # user_id = request.session["id"]
-                    # user = User.objects.get(id=user_id)
-
-                    # description = f"Invoice No: {invoice_no} dispatched by {user}."
-                    # Activity.objects.create(
-                    #     activity_type="DISPATCH",
-                    #     activity_user=user,
-                    #     activity_description=description,
-                    # )
-                    return JsonResponse(
-                        {
-                            "status": "success",
-                            "msg": f"S.K.U. {sku_name} dispatched successfully.",
-                        }
-                    )
-        except Exception as e:
-            JsonResponse({"status": "error", "msg": e})
-
-
-def dispatch_invoice(request, invoice_no):
-    # if request.user.is_authenticated:
-    try:
-        # role = request.session["role"]
-        # if role in ["CLIENT_HCH", "CLIENT"]:
-        #     return redirect("sku-items", page=1)
-        # elif role in ["DISPATCHER"]:
-        #     return redirect("invoices")
-        # else:
-        invoice = InvoiceTest.objects.get(invoice_no=invoice_no)
-        invoice_sku_list = invoice.invoice_items.all()
-        if invoice_sku_list.exists():
-            invoice_sku_list.update(item_scanned_status=SCAN_STATUS_COMPLETED)
-
-        # user_id = request.session["id"]
-        # user = User.objects.get(id=user_id)
-
-        # description = f"Invoice No: {invoice_no} dispatched by {user}."
-        # Activity.objects.create(
-        #     activity_type="DISPATCH",
-        #     activity_user=user,
-        #     activity_description=description,
-        # )
-
-        return redirect("invoices")
-        # return JsonResponse(
-        #     {
-        #         "status": "success",
-        #         "msg": f"Invoice No.{invoice_no} dispatched successfully.",
-        #     }
-        # )
-
-    except Exception as e:
-        return redirect("invoices")
-
-
-def update_sku(request):
-    if request.user.is_authenticated:
-        try:
-            if request.method == "POST":
-                sku_serial_no = request.POST["update-sku-srno"]
-                sku_name = request.POST["update-sku-name"]
-                sku_base_qty = request.POST["update-sku-qty"]
-
-                sku_item = StockItem.objects.get(sku_serial_no=sku_serial_no)
-                sku_name_before = sku_item.sku_name
-                sku_base_qty_before = sku_item.sku_base_qty
-                sku_item.sku_name = sku_name
-                sku_item.sku_base_qty = sku_base_qty
-                sku_item.save()
-
-                user_id = request.session["id"]
-                user = User.objects.get(id=user_id)
-                description = f"Updated S.K.U.Name from {sku_name_before} to {sku_name} and Base Quantity from {sku_base_qty_before} to {sku_base_qty}."
-                activity_type = "EDIT"
-                Activity.objects.create(
-                    activity_type=activity_type,
-                    activity_description=description,
-                    activity_user=user,
-                )
-                return redirect("sku-items", page=1)
-        except Exception as e:
-            return HttpResponse("Error -> ", e)
-    return JsonResponse({"success": "record updated"})
-
-
-def get_activity_logs(request):
-    if request.user.is_authenticated:
-        role = request.session["role"]
-        if role in ["CLIENT_HCH", "CLIENT"]:
-            return redirect("sku-items", page=1)
-        elif role in ["DISPATCHER"]:
-            return redirect("invoices")
-        elif role in ["EMPLOYEE"]:
-            return redirect("index")
-        else:
-            activity_data = Activity.objects.all()
-
-            return render(
-                request, "activity-logs.html", {"activity_data": activity_data}
-            )
-    return redirect("login")
 
 
 def generate_excel_sku_items(request):
@@ -805,13 +866,6 @@ def generate_excel_sku_items(request):
 
         wb.save(response)
         return response
-
-
-@login_required(login_url="login")
-@permission_required("app.view_company", raise_exception=True)
-def get_company_list(request):
-    companies = Company.objects.all()
-    return render(request, "companies.html", {"company_data": companies})
 
 
 # def get_company_list(request):

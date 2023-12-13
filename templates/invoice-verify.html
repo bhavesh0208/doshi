@@ -75,9 +75,9 @@
               <th>S.K.U. Base Quantity</th>
               <th>Barcode</th>
               <th>Status</th>
-              {% if request.session.role == "DISPATCHER" %}
+              {% comment %} {% if request.session.role == "DISPATCHER" %} {% endcomment %}
                 <th>Dispatch</th>
-              {% endif %}
+              {% comment %} {% endif %} {% endcomment %}
             </tr>
           </thead>
 
@@ -118,9 +118,14 @@
                 </h6>
               </td>
               {% endif %}
+              <td>
+                <a href="{% url "dispatch-sku" invoice.invoice_no sku.get_id_str %}" class="btn btn-success btn-circle btn-sm {% if invoice.status == "COMPLETED" %}disabled{% endif %}" title="Override" data-toggle="tooltip">
+                  <i class="fas fa-check"></i>
+                </a>
+              </td>
               {% comment %} <td><button class="btn btn-sm btn-warning btn-block" data-toggle="modal" data-target="#iupdateModal">Edit</button></td> {% endcomment %}
-              {% if request.session.role == "DISPATCHER" %}
-                {% if sku.item_scanned_status == "PENDING" %}
+              {% comment %} {% if request.session.role == "DISPATCHER" %} {% endcomment %}
+                {% comment %} {% if sku.item_scanned_status == "PENDING" %}
                   <td>
                     <button
                       class="btn btn-sm btn-success btn-block dispatch-stock" data-sku-barcode-no="{{ srno.sku_serial_no }}"
@@ -136,8 +141,8 @@
                       role="button"
                       >Dispatch</a>
                   </td>
-                {% endif %}
-              {% endif %}
+                {% endif %} {% endcomment %}
+              {% comment %} {% endif %} {% endcomment %}
             </tr>
             {% endfor %}
           </tbody>
@@ -379,7 +384,7 @@
 </script>
 
 <script>
-  $(".dispatch-stock").click(function(){
+  {% comment %} $(".dispatch-stock").click(function(){
     $(this).attr('disabled', true);
     var sku_barcode_no = $(this).attr('data-sku-barcode-no');
     var invoice_no = $(this).attr('data-invoice-no');
@@ -416,6 +421,6 @@
   }
     })
     
-  })
+  }) {% endcomment %}
 </script>
 {% endblock js %}

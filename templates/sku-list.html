@@ -8,20 +8,39 @@
 {% block content %}
   <!-- Main container fluid -->
   <div class="container-fluid">
+      
+    {% if messages %}
+    {% for message in messages %}
+    {% if message.tags == "success" %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert"
+        id="otpAlert">
+
+        <strong>{{ message }}</strong>
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    {% else %}
+    <div class="alert alert-danger alert-dismissible fade show" role="alert" id="otpAlert">
+
+        <strong>{{ message }}</strong>
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    {% endif %}
+    {% endfor %}
+    {% endif %}
 
        <!-- DataTales Example -->
        <div class="card shadow mb-4">
         <div class="card-header d-sm-flex align-items-center justify-content-between mb-4">
             <h6 class="mb-0 font-weight-bold text-primary">S.K.U. List</h6>
-
-                
                 <a
                   href="{% url 'generate-csv-sku-items' %}"
                   class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"
                   ><i class="fas fa-download fa-sm text-white-50"></i> Download Excel</a
                 >
-                 
-              
         </div>
         <div class="card-body">
             <div class="table-responsive">
@@ -30,37 +49,38 @@
                         <tr>
                           <th>Sr.No.</th>
                           <th>S.K.U. Name</th>
-                          {% if request.user.role == "ADMIN" or request.user.role == "EMPLOYEE" %}
+                          {% if request.user.role == "ADMIN" or request.user.role == "OPERATOR" %}
                             <th>Quantity</th>
                             <th>Rate</th>
                             <th>Amount</th>
+                            {% endif %}
                             <th>Base Qty</th>
-                          {% endif %}
                           <th>Barcode No</th>
-                          {% if request.session.role == "ADMIN" %}
+                          {% comment %} {% if request.session.role == "ADMIN" %} {% endcomment %}
                             <th>Action</th>
-                          {% endif %}
+                          {% comment %} {% endif %} {% endcomment %}
                         </tr>
                     </thead>
                     
                     <tbody>
-                      {% for stk in sku_obj %}
+                      {% for sku in sku_obj %}
                         <tr>
+
                             <td>{{ forloop.counter }}</td>
-                            <td>{{ stk.sku_name }}</td>
-                            {% if request.user.role == "ADMIN" or request.user.role == "EMPLOYEE" %}
-                              <td>{{ stk.sku_qty }}</td>
-                              <td>{{ stk.sku_rate }}</td>
-                              <td>{{ stk.sku_amount }}</td>
-                              <td>{{ stk.sku_base_qty }}</td>
+                            <td><a href="/sku-items/{{ sku.sku_name }}/" class="link-primary">{{ sku.sku_name }}</a></td>
+                            {% if request.user.role == "ADMIN" or request.user.role == "OPERATOR" %}
+                              <td>{{ sku.sku_qty }}</td>
+                              <td>{{ sku.sku_rate }}</td>
+                              <td>{{ sku.sku_amount }}</td>
                             {% endif %}
-                            <td>{{ stk.sku_serial_no }}</td>
-                            {% if request.session.role == "ADMIN" %}
+                            <td>{{ sku.sku_base_qty }}</td>
+                            <td>{{ sku.sku_serial_no }}</td>
+                            {% comment %} {% if request.session.role == "ADMIN" %} {% endcomment %}
                             <td>
-                              <button class="btn btn-warning btn-circle btn-sm update" data-toggle="modal" data-target="#updateDataModal" data-id="{{sku.id}}"><i class="fas fa-edit"></i>
+                              <button class="btn btn-warning btn-circle btn-sm update" data-toggle="modal" data-target="#updateDataModal" data-sku='{"name": "{{sku.sku_name}}", "base_qty": {{sku.sku_base_qty }}, "id": "{{sku.get_id_str}}" }'><i class="fas fa-edit"></i>
                               </button>
                             </td>
-                            {% endif %}
+                            {% comment %} {% endif %} {% endcomment %}
                         </tr>
                       {% endfor %}
                     </tbody>
@@ -85,7 +105,7 @@
           </button>
         </div>
         <div class="modal-body">
-          <form method="post" action="{% url 'update-sku' %}">
+          <form method="post" action="/sku-items/edit/" id="skuUpdateForm">
 
             {% csrf_token %}
 
@@ -93,7 +113,7 @@
               <label for="sku-name" class="col-sm-2 col-form-label">S.K.U.
               </label>
               <div class="col-sm-10">
-                <input type="text" class="form-control form-control-sm" id="exampleInputSKU" name="update-sku-name"
+                <input type="text" class="form-control form-control-sm" id="exampleInputSKU" name="update-sku-name" value=""
                   minlength=2 disabled />
               </div>
 
@@ -145,17 +165,17 @@
 
 <script>
   $(".update").click(function () {
+
     var $row = $(this).closest("tr");
-    //console.log($row);
-    $tds2 = $row.find("td:nth-child(2)");
-    $tds6 = $row.find("td:nth-child(6)");
-    $tds7 = $row.find("td:nth-child(7)");
-    console.log($tds2.text(), $tds6.text(), $tds7.text());
-
-    $('#exampleInputSKU').val($tds2.text());
-    $('#exampleInputBaseQty').val($tds6.text());
-    $('#exampleInputBarcode').val($tds7.text());
-
+    const skuObj = JSON.parse(this.dataset["sku"]);
+    
+    $('#skuUpdateForm').attr("action", `/sku-items/edit/${skuObj.id}/`);
+    //$tds2 = $row.find("td:nth-child(2)");
+    //$tds6 = $row.find("td:nth-child(6)");
+    //$tds7 = $row.find("td:nth-child(7)");
+    //console.log($tds2.text(), $tds6.text(), $tds7.text());
+    $('#exampleInputSKU').val(skuObj.name);
+    $('#exampleInputBaseQty').val(skuObj.base_qty);
   });
 
   $(document).ready(function () {

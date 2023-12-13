@@ -1,19 +1,17 @@
-from collections.abc import Iterable
-from datetime import timedelta
-
+from django.contrib.auth import get_user_model
 from django.contrib.auth.models import (
     AbstractBaseUser,
     BaseUserManager,
     PermissionsMixin,
 )
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
 from django.core.validators import validate_email
-from django.core.exceptions import ObjectDoesNotExist
 from django.template.loader import get_template
 from django.utils import timezone
-from django.contrib.auth import get_user_model
+from django.contrib.contenttypes.models import ContentType
+from django.utils.translation import gettext_lazy as _
 from djongo import models
-
 from app.otp import OtpVerification
 from doshi import settings
 
@@ -48,7 +46,6 @@ class UserManager(BaseUserManager):
         user.is_active = True
         user.role = "ADMIN"
         user.save(using=self._db)
-
         return user
 
 
@@ -57,6 +54,10 @@ class BaseModel(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    @property
+    def get_id_str(self):
+        return str(self._id)
+
     class Meta:
         abstract = True
 
@@ -64,20 +65,23 @@ class BaseModel(models.Model):
 class User(AbstractBaseUser, PermissionsMixin, BaseModel):
     # CHOICES
     ROLE_ADMIN = "ADMIN"
-    ROLE_EMPLOYEE = "EMPLOYEE"
-    ROLE_DISPATCHER = "DISPATCHER"
-    ROLE_CLIENT = "CLIENT"
-    ROLE_CLIENT_HCH = "CLIENT_HCH"
+    ROLE_OPERATOR = "OPERATOR"  # Employee change to Operator
+    ROLE_WAREHOUSE_MANAGER = (
+        "WAREHOUSE_MANAGER"  # Dispatcher change to Warehouse Manager
+    )
+    ROLE_WAREHOUSE_STAFF = "WAREHOUSE_STAFF"  # Newly added
+    ROLE_CLIENT = "CLIENT"  # Client
+    #  = "CLIENT_HCH"
     ROLES_TYPE_CHOICES = (
         (ROLE_ADMIN, "Admin"),
-        (ROLE_EMPLOYEE, "Employee"),
-        (ROLE_DISPATCHER, "Dispatcher"),
+        (ROLE_OPERATOR, "Operator"),
+        (ROLE_WAREHOUSE_MANAGER, "WAREHOUSE_MANAGER"),
+        (ROLE_WAREHOUSE_STAFF, "WAREHOUSE_STAFF"),
         (ROLE_CLIENT, "Client"),
-        (ROLE_CLIENT_HCH, "Client_HCH"),
+        # (ROLE_CLIENT_HCH, "Client_HCH"),
     )
 
     # DATABASE FIELDS
-
     name = models.CharField(validators=[validate_name], max_length=70, default="")
     email = models.EmailField(
         max_length=70, validators=[validate_email], unique=True, default=""
@@ -86,7 +90,7 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
         validators=[validate_contact], unique=True, max_length=10, default=""
     )
     role = models.CharField(
-        max_length=30, choices=ROLES_TYPE_CHOICES, default=ROLE_EMPLOYEE
+        max_length=30, choices=ROLES_TYPE_CHOICES, default=ROLE_WAREHOUSE_STAFF
     )
     is_active = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
@@ -122,7 +126,7 @@ class StockItem(BaseModel):
     sku_rate = models.FloatField(default=0.0)
     sku_amount = models.FloatField(default=0.0)
     sku_serial_no = models.CharField(
-        default="", max_length=200, unique=True, blank=True
+        default="", max_length=200, unique=True, blank=True, db_index=True
     )
     sku_status = models.BooleanField(
         default=True
@@ -181,6 +185,10 @@ class InvoiceStockItem(BaseModel):
             self.item_scanned_status = SCAN_STATUS_COMPLETED
         self.save()
 
+    def override(self):
+        self.item_scanned_status = SCAN_STATUS_COMPLETED
+        self.save()
+
 
 # New model for replacing old Invoice model and their related fields
 class InvoiceTest(BaseModel):
@@ -209,6 +217,14 @@ class InvoiceTest(BaseModel):
     # TO STARING METHOD
     def __str__(self):
         return self.invoice_no
+
+    class Meta:
+        permissions = [
+            (
+                "override_invoicetest",
+                "Can mark the status of all the invoice sku items to `COMPLETED`",
+            )
+        ]
 
     @property
     def status(self):
@@ -283,7 +299,7 @@ class Invoice(BaseModel):
         return self.invoice_no
 
 
-#  Bypass SKU Quantity Same #########
+#  Bypass SKU Quantity Same ###
 class ByPassModel(BaseModel):
     # DATABASE FIELDS
     invoice = models.ForeignKey(
@@ -316,29 +332,63 @@ class ByPassModel(BaseModel):
 
 class Activity(BaseModel):
     # CHOICES
-    ACTIVITY_DISPATCH = "DISPATCH"
-    ACTIVITY_EDIT = "EDIT"
-    ACTIVITY_TYPE_CHOICES = (
-        (ACTIVITY_DISPATCH, "Dispatch Invoice"),
-        (ACTIVITY_EDIT, "Edit S.K.U. Name or Base Qty"),
+    CHANGE = 1
+    DISPATCH = 2
+    SCAN = 3
+
+    ACTION_FLAG_CHOICES = (
+        (CHANGE, _("Change")),
+        (DISPATCH, _("Dispatch")),
+        (SCAN, _("Scan")),
     )
 
+    # ACTIVITY_DISPATCH = "DISPATCH"
+    # ACTIVITY_EDIT = "EDIT"
+    # ACTIVITY_TYPE_CHOICES = (
+    #     (ACTIVITY_DISPATCH, "Dispatch Invoice"),
+    #     (ACTIVITY_EDIT, "Edit S.K.U. Name or Base Qty"),
+    # )
+
     # DATABASE FIELDS
-    activity_type = models.CharField(
-        max_length=30, choices=ACTIVITY_TYPE_CHOICES, default="DISPATCH"
+    # activity_type = models.CharField(
+    #     max_length=30, choices=ACTIVITY_TYPE_CHOICES, default="DISPATCH"
+    # )
+    content_type = models.ForeignKey(
+        ContentType,
+        models.SET_NULL,
+        verbose_name=_("content type"),
+        blank=True,
+        null=True,
     )
-    activity_description = models.TextField(max_length=300, blank=True)
-    activity_user = models.ForeignKey(
-        User, on_delete=models.DO_NOTHING, default=None, blank=True
+    object_id = models.TextField(_("object id"), blank=True, null=True)
+    object_repr = models.CharField(_("object repr"), max_length=200)
+    action_flag = models.PositiveSmallIntegerField(
+        _("action flag"), choices=ACTION_FLAG_CHOICES
     )
-    activity_date = models.DateField(auto_now_add=True)
-    activity_time = models.TimeField(auto_now_add=True)
+    action_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING, default=None, blank=True
+    )
+    action_time = models.DateTimeField(
+        _("action time"),
+        default=timezone.now,
+        editable=False,
+    )
+    change_message = models.TextField(_("change message"), blank=True)
 
     objects = models.DjongoManager()
 
     # TO STRING METHOD
     def __str__(self):
-        self.activity_description
+        self.activity_descriptio
+
+    def __repr__(self):
+        return str(self.action_time)
+
+    class Meta:
+        verbose_name = _("log entry")
+        verbose_name_plural = _("log entries")
+        db_table = "user_activity_log"
+        ordering = ["-action_time"]
 
 
 class OTP(BaseModel):

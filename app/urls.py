@@ -1,9 +1,8 @@
 from django.urls import path
-from django.conf.urls.static import static
 from app.views import *
 
 urlpatterns = [
-    path("", index, name="index"),
+    path("dashboard/", dashboard, name="dashboard"),
     # User Related Views
     path("register/", register, name="register"),
     path("login/", login_user, name="login"),
@@ -13,15 +12,20 @@ urlpatterns = [
     path("reset-password/<uidb64>/<token>/", reset_password, name="reset-password"),
     # Webportal content urls
     # Stock Item urls
-    path("sku-items/<int:page>", get_stock_items, name="sku-items"),
-    path("sku-items/update-sku/", update_sku, name="update-sku"),
+    path("sku-items/", get_stock_items, name="sku-items"),
+    path("sku-items/edit/<uid>/", update_sku, name="update-sku"),
     # Invoice urls
+    path("invoice/", invoices, name="invoices"),
     path(
         "invoice/details/<invoice_no>/",
         invoice_details,
         name="invoice-details",
     ),
-    path("invoice/", invoices, name="invoices"),
+    path(
+        "invoice/details/<invoice_no>/edit/scan-qty/",
+        update_invoiceitem_scan_qty,
+        name="update-scan-qty",
+    ),
     path("invoice/verify/<invoice_no>/", invoice_verify, name="invoice-verify"),
     path(
         "invoice/verify/<invoice_no>/scan/",
@@ -33,14 +37,13 @@ urlpatterns = [
         bypass_invoice_sku_item,
         name="bypass-invoice-item",
     ),
-    path("invoice/dispatch/<invoice_no>/", dispatch_invoice, name="dispatch-invoice"),
-    path("bypass-products/", bypass_products, name="bypass-products"),
-    path("update-scan-qty/<invoice_no>", update_scan_qty, name="update-scan-qty"),
     path(
-        "invoices/invoice-verify/dispatch-sku/",
+        "invoices/verify/<invoice_no>/dispatch/sku-item/<uid>/",
         dispatch_sku,
         name="dispatch-sku",
     ),
+    path("invoice/dispatch/<invoice_no>/", dispatch_invoice, name="dispatch-invoice"),
+    path("bypass-products/", bypass_products, name="bypass-products"),
     # Activity log urls
     path("activity/logs/", get_activity_logs, name="activity-logs"),
     # CSV generate urls

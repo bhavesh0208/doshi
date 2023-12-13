@@ -9,7 +9,7 @@
   id="accordionSidebar"
 >
   <!-- Sidebar - Brand -->
-  <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{% url 'index' %}" style="margin: 0.5rem; border-radius:10px; background: white;">
+  <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{% url 'dashboard' %}" style="margin: 0.5rem; border-radius:10px; background: white;">
     <div class="sidebar-brand-icon" style="padding-right: 10px; padding-top: 10px;">
         <img height="70" src="{% static 'assets/img/doshi-small.png' %}">
     </div>
@@ -66,7 +66,7 @@
 
   <!-- Nav Item - Dashboard -->
   <li class="nav-item active">
-    <a class="nav-link" href="{% url 'index' %}">
+    <a class="nav-link" href="{% url 'dashboard' %}">
       <i class="fas fa-home"></i>
       <span>Dashboard</span></a
     >
@@ -77,7 +77,7 @@
 
   <!-- Nav Item - Charts -->
   <li class="nav-item">
-    <a class="nav-link" href="{% url 'sku-items' 1 %}">
+    <a class="nav-link" href="{% url 'sku-items' %}">
       <i class="fas fa-chart-bar"></i>
       <span>S.K.U. Items</span></a
     >

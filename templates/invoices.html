@@ -89,11 +89,11 @@
                   <a href="{% url "invoice-details" invoice.invoice_no %}" class="btn btn-primary btn-circle btn-sm" title="View" data-toggle="tooltip">
                       <i class="fas fa-eye"></i>
                   </a>
-                  <a href="{% url "invoice-verify" invoice.invoice_no %}" class="btn btn-warning btn-circle btn-sm" title="Scan" data-toggle="tooltip">
+                  <a href="{% url "invoice-verify" invoice.invoice_no %}" class="btn btn-warning btn-circle btn-sm {% if invoice.status == "COMPLETED" %}disabled{% endif %}" title="Scan" data-toggle="tooltip">
                       <i class="fas fa-edit"></i>
                   </a>
 
-                  <a href="{% url "dispatch-invoice" invoice.invoice_no %}" class="btn btn-success btn-circle btn-sm {% if invoice.status == "COMPLETED" %}disabled{% endif %}" title="View" data-toggle="tooltip">
+                  <a href="{% url "dispatch-invoice" invoice.invoice_no %}" class="btn btn-success btn-circle btn-sm {% if invoice.status == "COMPLETED" %}disabled{% endif %}" title="Override" data-toggle="tooltip">
                       <i class="fas fa-check"></i>
                   </a>
                 </td>

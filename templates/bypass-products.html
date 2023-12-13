@@ -53,7 +53,7 @@
                 {% for item in bypass_list %}
                 <tr>
                   <td>{{ forloop.counter }}</td>
-                  <td id="1">{{ item.invoice.invoice_no }}</td>
+                  <td id="1"><a href="{% url "invoice-details" item.invoice.invoice_no %}" class="link-primary">{{ item.invoice.invoice_no }}</a></td>
                   <td>{{ item.bypass_stock_item.sku_name }}</td>
                   <td>{{ item.stock_item.sku_name }}</td>
                   <td>{{item.bypass_qty}}</td>
